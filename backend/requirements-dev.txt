@@ -1,0 +1,32 @@
+﻿# Основные зависимости
+-r requirements.txt
+
+# Инструменты разработки
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+pylint==3.0.2
+pylint-django==2.5.3
+flake8-django==1.1.5
+
+# Тестирование
+pytest==7.4.3
+pytest-django==4.7.0
+pytest-cov==4.1.0
+factory-boy==3.3.0
+
+# Форматирование
+isort==5.13.2
+
+# Pre-commit
+pre-commit==3.5.0
+
+# Типизация
+django-stubs==4.2.5
+djangorestframework-stubs==3.14.0
+types-requests==2.31.0.10
+types-PyYAML==6.0.12.11
+
+# Безопасность
+bandit==1.7.5
+safety==2.3.5
