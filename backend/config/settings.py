@@ -29,14 +29,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third party
     "rest_framework",
     "corsheaders",
     "drf_yasg",
     "django_filters",
-    "users",
-    "projects",
-    "tasks",
-    "notifications",
+    # Local apps (вариант с префиксом apps.)
+    "apps.users",
+    "apps.projects",
+    "apps.tasks",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
