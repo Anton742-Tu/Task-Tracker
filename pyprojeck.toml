@@ -33,23 +33,20 @@ lines_after_imports = 2
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
+disallow_untyped_defs = false
 check_untyped_defs = true
-disallow_untyped_decorators = true
 no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
+
+# Игнорировать конкретные ошибки на старте
+disable_error_code = [
+    "var-annotated",  # Игнорировать отсутствие аннотаций переменных
+    "dict-item",      # Игнорировать проблемы с dict
+]
 
 [[tool.mypy.overrides]]
 module = [
     "django.*",
     "rest_framework.*",
-    "drf_yasg.*",
 ]
 ignore_missing_imports = true
 

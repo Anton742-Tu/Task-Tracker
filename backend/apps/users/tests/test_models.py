@@ -2,7 +2,6 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
-
 User = get_user_model()
 
 
@@ -11,7 +10,9 @@ class TestUserModel:
 
     def test_create_user(self):
         """Тест создания обычного пользователя."""
-        user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        user = User.objects.create_user(
+            username="testuser", email="test@example.com", password="testpass123"
+        )
 
         assert user.username == "testuser"
         assert user.email == "test@example.com"

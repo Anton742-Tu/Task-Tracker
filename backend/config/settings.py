@@ -4,7 +4,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-
 # Загружаем переменные окружения
 load_dotenv()
 
@@ -91,7 +90,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": str(BASE_DIR / "db.sqlite3"),
         }
     }
 

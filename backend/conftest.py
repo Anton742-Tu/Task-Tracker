@@ -2,7 +2,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-
 User = get_user_model()
 
 
@@ -16,7 +15,9 @@ def api_client():
 def authenticated_api_client():
     """Фикстура для аутентифицированного API клиента."""
     client = APIClient()
-    user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+    user = User.objects.create_user(
+        username="testuser", email="test@example.com", password="testpass123"
+    )
     client.force_authenticate(user=user)
     return client
 
@@ -25,7 +26,9 @@ def authenticated_api_client():
 def admin_api_client():
     """Фикстура для API клиента администратора."""
     client = APIClient()
-    admin_user = User.objects.create_superuser(username="admin", email="admin@example.com", password="adminpass123")
+    admin_user = User.objects.create_superuser(
+        username="admin", email="admin@example.com", password="adminpass123"
+    )
     client.force_authenticate(user=admin_user)
     return client
 
