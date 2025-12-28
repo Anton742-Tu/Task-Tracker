@@ -30,6 +30,22 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
+    @property
+    def task_count(self):
+        """Количество задач в проекте."""
+        return self.tasks.count()
+
+    @property
+    def completed_task_count(self):
+        """Количество завершённых задач."""
+        return self.tasks.filter(status="done").count()
+
+    def get_members_display(self):
+        """Отображает список участников."""
+        return ", ".join([user.username for user in self.members.all()])
+
+    get_members_display.short_description = "Участники"
+
     class Meta:
         verbose_name = "Проект"
         verbose_name_plural = "Проекты"

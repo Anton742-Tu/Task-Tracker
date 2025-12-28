@@ -1,22 +1,15 @@
-from rest_framework import permissions, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, viewsets
 
 from api.serializers.project import ProjectSerializer
 from apps.projects.models import Project
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    """ViewSet для работы с проектами."""
-
+    # Добавляем обязательные атрибуты
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        """Возвращает только проекты, где пользователь является участником."""
-        user = self.request.user
-        return Project.objects.filter(members=user).distinct()
-
-    def perform_create(self, serializer):
-        """Сохраняет проект с текущим пользователем в качестве создателя и участника."""
-        project = serializer.save()
-        project.members.add(self.request.user)
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ["status"]
+    search_fields = ["name", "description"]

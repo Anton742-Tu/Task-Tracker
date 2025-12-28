@@ -3,12 +3,13 @@ from django.urls import include, path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
+from django.conf import settings
 
 schema_view = get_schema_view(
     openapi.Info(
         title="Task Tracker API",
         default_version="v1",
-        description="API системы управления задачами",
+        description="API для системы управления задачами",
         terms_of_service="https://www.google.com/policies/terms/",
         contact=openapi.Contact(email="contact@tasktracker.local"),
         license=openapi.License(name="BSD License"),
@@ -20,6 +21,19 @@ schema_view = get_schema_view(
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
-    path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="swagger"),
-    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="redoc"),
+    path(
+        "swagger/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
+    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
+
+# Добавьте только если DEBUG=True
+
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns = [
+        path("__debug__/", include(debug_toolbar.urls)),
+    ] + urlpatterns
