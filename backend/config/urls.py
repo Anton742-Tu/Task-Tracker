@@ -1,9 +1,11 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-from django.conf import settings
+
+from api.views.home import home_view
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -19,8 +21,13 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    # Главная страница
+    path("", home_view, name="home"),
+    # Админка
     path("admin/", admin.site.urls),
+    # API
     path("api/", include("api.urls")),
+    # Документация
     path(
         "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),
@@ -29,8 +36,7 @@ urlpatterns = [
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
 
-# Добавьте только если DEBUG=True
-
+# Debug toolbar только для разработки
 if settings.DEBUG:
     import debug_toolbar
 
