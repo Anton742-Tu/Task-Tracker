@@ -1,3 +1,41 @@
+[tool.poetry]
+name = "task-tracker-backend"
+version = "0.1.0"
+description = "Django backend for Task Tracker"
+authors = ["Anton Tumashov <Tumashovster@Gmail.com>"]
+readme = "README.md"
+packages = [{include = "backend"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+django = "^5.0"
+djangorestframework = "^3.14"
+psycopg2-binary = "^2.9"
+python-dotenv = "^1.0"
+django-cors-headers = "^4.3"
+drf-yasg = "^1.21"
+django-filter = "^23.5"
+whitenoise = "^6.6"
+django-debug-toolbar = "^4.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+pytest-django = "^4.7"
+pytest-cov = "^4.1"
+black = "^23.11"
+flake8 = "^6.1"
+mypy = "^1.7"
+isort = "^5.13"
+pre-commit = "^3.6"
+
+[tool.poetry.scripts]
+start = "python manage.py runserver"
+test = "pytest"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.black]
 line-length = 119
 target-version = ["py312"]
@@ -51,7 +89,7 @@ module = [
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "backend.config.settings"
+DJANGO_SETTINGS_MODULE = "backend.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = [
     "--strict-markers",
@@ -61,7 +99,7 @@ addopts = [
     "--cov-report=html",
     "--cov-report=xml",
 ]
-testpaths = ["backend"]
+testpaths = ["apps", "api"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: integration tests",
