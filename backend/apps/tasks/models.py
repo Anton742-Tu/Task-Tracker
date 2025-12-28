@@ -1,9 +1,4 @@
-from django.contrib.auth import get_user_model
 from django.db import models
-
-from apps.projects.models import Project
-
-User = get_user_model()
 
 
 class Task(models.Model):
@@ -25,10 +20,13 @@ class Task(models.Model):
     title = models.CharField(max_length=200, verbose_name="Заголовок")
     description = models.TextField(blank=True, verbose_name="Описание")
     project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name="tasks", verbose_name="Проект"
+        "projects.Project",
+        on_delete=models.CASCADE,
+        related_name="tasks",
+        verbose_name="Проект",
     )
     assignee = models.ForeignKey(
-        User,
+        "users.User",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -55,10 +53,6 @@ class Task(models.Model):
         verbose_name = "Задача"
         verbose_name_plural = "Задачи"
         ordering = ["-priority", "-created_at"]
-        indexes = [
-            models.Index(fields=["project", "status"]),
-            models.Index(fields=["assignee", "status"]),
-        ]
 
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"

@@ -13,15 +13,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Add apps to Python path
 sys.path.insert(0, os.path.join(BASE_DIR, "apps"))
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key")
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY and DEBUG:
+    SECRET_KEY = "django-insecure-fallback-key-for-dev-only"
+elif not SECRET_KEY and not DEBUG:
+    raise ValueError("SECRET_KEY must be set in production!")
+
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
-# Application definition (остается как было)
+# Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -34,15 +39,20 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_yasg",
     "django_filters",
-    # Local apps (вариант с префиксом apps.)
+    "whitenoise.runserver_nostatic",  # Для статических файлов в продакшене
+    # Local apps
     "apps.users",
     "apps.projects",
     "apps.tasks",
     "apps.notifications",
 ]
 
+# Custom user model
+AUTH_USER_MODEL = "users.User"
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Добавлено здесь
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -85,6 +95,10 @@ if USE_POSTGRES:
             "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
             "HOST": os.getenv("POSTGRES_HOST", "localhost"),
             "PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "CONN_MAX_AGE": 600,  # 10 minutes connection persistence
+            "OPTIONS": {
+                "connect_timeout": 10,
+            },
         }
     }
 else:
@@ -95,6 +109,17 @@ else:
             "NAME": str(BASE_DIR / "db.sqlite3"),
         }
     }
+
+# Email settings
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@tasktracker.com")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -118,9 +143,16 @@ TIME_ZONE = os.getenv("TIME_ZONE", "Europe/Moscow")
 USE_I18N = True
 USE_TZ = True
 
-# Static files
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# Media files
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -134,18 +166,171 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ],
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
 }
 
+# Security settings для продакшена
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 # CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+CORS_ALLOWED_ORIGINS = os.getenv(
+    "CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+).split(",")
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
-# Custom user model
-AUTH_USER_MODEL = "users.User"
+# Swagger settings
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Basic": {"type": "basic"},
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT authorization header using the Bearer scheme. Example: 'Bearer {token}'",
+        },
+    },
+    "USE_SESSION_AUTH": True,
+    "LOGIN_URL": "/admin/login/",
+    "LOGOUT_URL": "/admin/logout/",
+    "DEFAULT_MODEL_RENDERING": "example",
+    "DOC_EXPANSION": "none",
+    "APIS_SORTER": "alpha",
+    "OPERATIONS_SORTER": "alpha",
+}
+
+# Redoc settings
+REDOC_SETTINGS = {
+    "LAZY_RENDERING": True,
+    "NATIVE_SCROLLBARS": False,
+    "REQUIRED_PROPS_FIRST": True,
+    "NO_AUTO_AUTH": False,
+    "PATH_IN_MIDDLE": False,
+    "HIDE_HOSTNAME": False,
+    "EXPAND_RESPONSES": "200,201",
+}
+
+# Logging configuration
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "debug.log",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "api": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": False,
+        },
+    },
+}
+
+# Cache settings
+if not DEBUG and os.getenv("REDIS_URL"):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.getenv("REDIS_URL", "redis://localhost:6379/1"),
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
+    }
+
+# Validate settings
+if DEBUG:
+    print("=" * 50)
+    print("DEBUG MODE IS ENABLED!")
+    print("Database:", DATABASES["default"]["ENGINE"])
+    print("Allowed hosts:", ALLOWED_HOSTS)
+    print("=" * 50)
+
+# Дополнительная проверка для продакшена
+if not DEBUG and "localhost" in ALLOWED_HOSTS:
+    import warnings
+
+    warnings.warn(
+        "localhost is in ALLOWED_HOSTS in production! This is a security risk.",
+        RuntimeWarning,
+    )
+
+# Django Debug Toolbar (только для разработки)
+if DEBUG:
+    INSTALLED_APPS += [
+        "debug_toolbar",
+    ]
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+
+    INTERNAL_IPS = [
+        "127.0.0.1",
+        "localhost",
+    ]
+
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": lambda request: True,
+    }
