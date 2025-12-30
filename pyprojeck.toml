@@ -17,6 +17,7 @@ drf-yasg = "^1.21"
 django-filter = "^23.5"
 whitenoise = "^6.6"
 django-debug-toolbar = "^4.3"
+djangorestframework-simplejwt = "^5.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4"
