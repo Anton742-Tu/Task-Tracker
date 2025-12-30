@@ -1,5 +1,5 @@
 from django.db.models import Q
-from rest_framework import viewsets, permissions
+from rest_framework import permissions, viewsets
 
 from api.permissions import (IsAdminUser, IsManagerOrAdmin,
                              IsTaskAssigneeOrAdmin)

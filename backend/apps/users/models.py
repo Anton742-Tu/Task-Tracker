@@ -24,5 +24,20 @@ class User(AbstractUser):
     def is_admin(self):
         return self.role == "admin"
 
+    def save(self, *args, **kwargs):
+        # Автоматически делаем менеджеров и админов персоналом
+        if self.role in ["manager", "admin"]:
+            self.is_staff = True
+        else:
+            self.is_staff = False
+
+        # Админы всегда суперпользователи
+        if self.role == "admin":
+            self.is_superuser = True
+        else:
+            self.is_superuser = False
+
+        super().save(*args, **kwargs)
+
     class Meta:
         db_table = "users_user"

@@ -113,6 +113,11 @@ else:
         }
     }
 
+AUTHENTICATION_BACKENDS = [
+    "apps.users.backends.RoleBasedAdminBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 # Email settings
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
