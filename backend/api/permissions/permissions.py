@@ -1,22 +1,33 @@
-from rest_framework import Project, ProjectSerializer, permissions, viewsets
+from rest_framework import permissions
 
 
-class IsProjectMember(permissions.BasePermission):
-    """Базовая проверка - пользователь участник проекта."""
-
-    def has_object_permission(self, request, view, obj):
-        # Пока просто возвращаем True для теста
-        return True
-
-
-class IsAuthenticatedReadOnly(permissions.BasePermission):
-    """Только чтение для аутентифицированных."""
+class IsAdminUser(permissions.BasePermission):
+    """Разрешает доступ только администраторам"""
 
     def has_permission(self, request, view):
-        return request.method in ["GET", "HEAD", "OPTIONS"]
+        return request.user.is_authenticated and request.user.is_admin
 
 
-class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticatedReadOnly]  # ← Пока только чтение
+class IsManagerOrAdmin(permissions.BasePermission):
+    """Разрешает доступ менеджерам и администраторам"""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_manager
+
+
+class IsProjectMemberOrAdmin(permissions.BasePermission):
+    """Разрешает доступ участникам проекта или администраторам"""
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_admin:
+            return True
+        return request.user in obj.members.all() or request.user == obj.creator
+
+
+class IsTaskAssigneeOrAdmin(permissions.BasePermission):
+    """Разрешает доступ исполнителю задачи или администраторам"""
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_admin:
+            return True
+        return request.user == obj.assigned_to

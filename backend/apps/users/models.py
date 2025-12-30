@@ -3,34 +3,41 @@ from django.db import models
 
 
 class User(AbstractUser):
-    """Кастомная модель пользователя."""
-
-    ROLE_CHOICES = [
+    ROLE_CHOICES = (
         ("employee", "Сотрудник"),
         ("manager", "Менеджер"),
         ("admin", "Администратор"),
-    ]
-
-    role: str = models.CharField(
-        max_length=20, choices=ROLE_CHOICES, default="employee", verbose_name="Роль"
-    )
-    phone: str = models.CharField(max_length=20, blank=True, verbose_name="Телефон")
-    department: str = models.CharField(max_length=100, blank=True, verbose_name="Отдел")
-    position: str = models.CharField(
-        max_length=100, blank=True, verbose_name="Должность"
     )
 
-    class Meta:
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="employee")
+    bio = models.TextField(blank=True, null=True)
+    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
 
-    def __str__(self) -> str:
-        return f"{self.get_full_name() or self.username} ({self.role})"
+    def __str__(self):
+        return f"{self.username} ({self.get_role_display()})"
 
     @property
-    def is_manager(self) -> bool:
+    def is_manager(self):
         return self.role in ["manager", "admin"]
 
     @property
-    def is_admin(self) -> bool:
+    def is_admin(self):
         return self.role == "admin"
+
+    def save(self, *args, **kwargs):
+        # Автоматически делаем менеджеров и админов персоналом
+        if self.role in ["manager", "admin"]:
+            self.is_staff = True
+        else:
+            self.is_staff = False
+
+        # Админы всегда суперпользователи
+        if self.role == "admin":
+            self.is_superuser = True
+        else:
+            self.is_superuser = False
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = "users_user"
