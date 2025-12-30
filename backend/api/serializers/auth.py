@@ -60,6 +60,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения информации о пользователе"""
 
+    role_display = serializers.CharField(source="get_role_display", read_only=True)
+
     class Meta:
         model = User
         fields = (
@@ -68,7 +70,9 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "role",
+            "role_display",
             "date_joined",
             "last_login",
         )
-        read_only_fields = ("id", "date_joined", "last_login")
+        read_only_fields = ("id", "date_joined", "last_login", "role_display")

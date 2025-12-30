@@ -7,10 +7,12 @@ from api.views.auth import (CustomTokenObtainPairView, LogoutView,
 from api.views.home import home_view
 from api.views.project import ProjectViewSet
 from api.views.task import TaskViewSet
+from api.views.user import UserViewSet
 
 router = DefaultRouter()
 router.register(r"projects", ProjectViewSet)
 router.register(r"tasks", TaskViewSet)
+router.register(r"users", UserViewSet, basename="user")
 
 urlpatterns = [
     # Аутентификация

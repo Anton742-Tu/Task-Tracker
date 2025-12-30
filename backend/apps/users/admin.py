@@ -6,19 +6,11 @@ from .models import User
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    """Кастомная админка для пользователя."""
-
-    list_display = ["username", "email", "first_name", "last_name", "role", "is_staff"]
-    list_filter = ["role", "is_staff", "is_superuser"]
+    list_display = ("username", "email", "first_name", "last_name", "role", "is_staff")
+    list_filter = ("role", "is_staff", "is_superuser")
     fieldsets = UserAdmin.fieldsets + (
-        (
-            "Дополнительная информация",
-            {"fields": ("role", "phone", "department", "position")},
-        ),
+        ("Дополнительная информация", {"fields": ("role", "bio", "avatar")}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        (
-            "Дополнительная информация",
-            {"fields": ("role", "phone", "department", "position")},
-        ),
+        ("Дополнительная информация", {"fields": ("role",)}),
     )

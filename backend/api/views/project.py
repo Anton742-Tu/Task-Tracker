@@ -1,8 +1,11 @@
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets
 
+from api.permissions import (IsAdminUser, IsManagerOrAdmin,
+                             IsProjectMemberOrAdmin)
 from api.serializers.project import ProjectSerializer
-from apps.projects.models import Project, models
+from apps.projects.models import Project
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -14,17 +17,25 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """
-        Разные права для разных действий
+        Настраиваем права доступа:
+        - Список и просмотр: любой авторизованный пользователь
+        - Создание: менеджеры и администраторы
+        - Обновление/удаление: администраторы или создатель проекта
         """
         if self.action in ["list", "retrieve"]:
             permission_classes = [permissions.IsAuthenticated]
-        else:
-            permission_classes = [permissions.IsAdminUser]
+        elif self.action == "create":
+            permission_classes = [IsManagerOrAdmin]
+        else:  # update, partial_update, destroy
+            permission_classes = [IsProjectMemberOrAdmin | IsAdminUser]
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
         """
-        Пользователи видят только свои проекты или проекты, где они участники
+        Фильтрация проектов по ролям:
+        - Администраторы видят все
+        - Менеджеры видят свои проекты и проекты, где они участники
+        - Сотрудники видят только проекты, где они участники
         """
         user = self.request.user
 
@@ -32,10 +43,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return Project.objects.none()
 
-        if user.is_superuser:
+        if not user.is_authenticated:
+            return Project.objects.none()
+
+        if user.is_admin:
             return Project.objects.all()
 
-        # Обычные пользователи видят проекты, где они создатель или участник
-        return Project.objects.filter(
-            models.Q(creator=user) | models.Q(members=user)
-        ).distinct()
+        # Базовый запрос: проекты где пользователь создатель или участник
+        queryset = Project.objects.filter(Q(creator=user) | Q(members=user)).distinct()
+
+        return queryset
+
+    def perform_create(self, serializer):
+        """Автоматически назначаем создателя проекта"""
+        serializer.save(creator=self.request.user)
