@@ -1,229 +1,261 @@
+import mimetypes
 import os
+from pathlib import Path
 
 import magic
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
+
+User = get_user_model()
 
 
-def upload_to(instance, filename):
-    """Генерируем путь для загрузки файла"""
-    now = timezone.now()
+def validate_file_type(value):
+    """Валидатор для проверки типа файла"""
+    # Получаем MIME тип
+    try:
+        # Используем python-magic для определения реального типа файла
+        mime = magic.from_buffer(value.read(1024), mime=True)
+        value.seek(0)  # Возвращаемся в начало файла
+    except (magic.MagicException, AttributeError):
+        # Если не удалось определить через magic, используем расширение
+        mime = mimetypes.guess_type(value.name)[0]
 
-    # Определяем тип контента (задача, проект, пользователь)
-    if instance.task:
-        folder = f"tasks/{instance.task.id}"
+    if not mime:
+        raise ValidationError(_("Не удалось определить тип файла"))
+
+    # Проверяем разрешенные типы
+    if mime not in settings.ALLOWED_FILE_TYPES:
+        raise ValidationError(
+            _("Тип файла %(type)s не поддерживается") % {"type": mime}
+        )
+
+
+def validate_file_size(value):
+    """Валидатор для проверки размера файла"""
+    if value.size > settings.MAX_UPLOAD_SIZE:
+        raise ValidationError(
+            _("Размер файла не должен превышать %(size)d MB")
+            % {"size": settings.MAX_UPLOAD_SIZE // (1024 * 1024)}
+        )
+
+
+def file_upload_path(instance, filename):
+    """Генерация пути для загрузки файла"""
+    # Определяем тип объекта для организации структуры папок
+    if instance.user:
+        folder = f"users/{instance.user.id}"
     elif instance.project:
         folder = f"projects/{instance.project.id}"
-    elif instance.user:
-        folder = f"users/{instance.user.id}"
+    elif instance.task:
+        folder = f"tasks/{instance.task.id}"
     else:
         folder = "general"
 
-    # Добавляем дату для организации
-    date_path = now.strftime("%Y/%m/%d")
+    # Генерируем уникальное имя файла
+    timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+    extension = Path(filename).suffix
+    new_filename = f"{timestamp}_{Path(filename).stem}{extension}"
 
-    # Сохраняем оригинальное имя, но с slugify для безопасности
-    name, ext = os.path.splitext(filename)
-    safe_name = slugify(name)[:50]  # Ограничиваем длину
-    filename = f"{safe_name}{ext}"
-
-    return f"uploads/{folder}/{date_path}/{filename}"
+    return os.path.join("uploads", folder, new_filename)
 
 
 class FileAttachment(models.Model):
-    """Модель для хранения файловых вложений"""
+    """Модель для хранения файлов и вложений"""
 
-    class FileType(models.TextChoices):
-        DOCUMENT = "document", "Документ"
-        IMAGE = "image", "Изображение"
-        ARCHIVE = "archive", "Архив"
-        AUDIO = "audio", "Аудио"
-        VIDEO = "video", "Видео"
-        OTHER = "other", "Другое"
-
-    # Основные поля
-    file = models.FileField(upload_to=upload_to, verbose_name="Файл", max_length=500)
-
-    original_filename = models.CharField(
-        max_length=255, verbose_name="Оригинальное имя файла"
+    FILE_TYPES = (
+        ("image", "Изображение"),
+        ("document", "Документ"),
+        ("archive", "Архив"),
+        ("other", "Другое"),
     )
 
-    file_type = models.CharField(
-        max_length=20, choices=FileType.choices, verbose_name="Тип файла"
+    # Файл
+    file = models.FileField(
+        _("Файл"),
+        upload_to=file_upload_path,
+        validators=[validate_file_type, validate_file_size],
+        max_length=500,
     )
 
-    mime_type = models.CharField(max_length=100, verbose_name="MIME тип", blank=True)
-
-    file_size = models.PositiveIntegerField(
-        verbose_name="Размер файла (байты)", default=0
-    )
+    # Метаданные файла
+    original_filename = models.CharField(_("Исходное имя файла"), max_length=255)
+    file_type = models.CharField(_("Тип файла"), max_length=20, choices=FILE_TYPES)
+    mime_type = models.CharField(_("MIME тип"), max_length=100)
+    file_size = models.PositiveIntegerField(_("Размер файла (в байтах)"))
 
     # Связи с другими моделями
-    task = models.ForeignKey(
-        "tasks.Task",
+    uploaded_by = models.ForeignKey(
+        User,
         on_delete=models.CASCADE,
-        related_name="attachments",
+        related_name="uploaded_files",
+        verbose_name=_("Загружено пользователем"),
+    )
+
+    # ВАЖНО: используем названия в единственном числе
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="personal_files",
         null=True,
         blank=True,
-        verbose_name="Задача",
+        verbose_name=_("Пользователь (для персональных файлов)"),
     )
 
     project = models.ForeignKey(
-        "projects.Project",
+        "projects.Project",  # Используем строковую ссылку
         on_delete=models.CASCADE,
-        related_name="attachments",
+        related_name="files",
         null=True,
         blank=True,
-        verbose_name="Проект",
+        verbose_name=_("Проект"),
     )
 
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        related_name="attachments",
+    task = models.ForeignKey(
+        "tasks.Task",  # Используем строковую ссылку
+        on_delete=models.CASCADE,
+        related_name="files",
         null=True,
         blank=True,
-        verbose_name="Пользователь",
+        verbose_name=_("Задача"),
     )
 
-    # Метаданные
-    uploaded_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        related_name="uploaded_files",
-        null=True,
-        verbose_name="Загрузил",
-    )
+    # Описание и метаданные
+    description = models.TextField(_("Описание"), blank=True, default="")
+    is_public = models.BooleanField(_("Публичный файл"), default=False)
+    upload_date = models.DateTimeField(_("Дата загрузки"), auto_now_add=True)
+    last_accessed = models.DateTimeField(_("Последний доступ"), null=True, blank=True)
+    download_count = models.PositiveIntegerField(_("Количество скачиваний"), default=0)
 
-    description = models.TextField(verbose_name="Описание", blank=True)
+    # Индексы для оптимизации запросов
+    class Meta:
+        verbose_name = _("Файл")
+        verbose_name_plural = _("Файлы")
+        ordering = ["-upload_date"]
+        indexes = [
+            models.Index(fields=["upload_date"]),
+            models.Index(fields=["file_type"]),
+            models.Index(fields=["is_public"]),
+            models.Index(fields=["uploaded_by"]),
+            # ВАЖНО: исправляем индексы - используем существующие поля
+            models.Index(fields=["project"]),
+            models.Index(fields=["task"]),
+            models.Index(fields=["user"]),
+        ]
 
-    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата загрузки")
+    def __str__(self):
+        return f"{self.original_filename} ({self.get_file_type_display()})"
 
-    is_public = models.BooleanField(default=False, verbose_name="Публичный доступ")
-
-    # Методы
     def save(self, *args, **kwargs):
-        """Переопределяем save для определения типа файла"""
-        if self.file and not self.original_filename:
-            self.original_filename = os.path.basename(self.file.name)
+        """Переопределяем save для автоматического определения типа файла"""
+        if not self.pk:  # Только при создании
+            # Определяем MIME тип
+            if hasattr(self.file, "file"):
+                self.file.seek(0)
+                mime = magic.from_buffer(self.file.read(1024), mime=True)
+                self.file.seek(0)
+            else:
+                mime = (
+                    mimetypes.guess_type(self.original_filename)[0]
+                    or "application/octet-stream"
+                )
 
-        if self.file and not self.file_size:
-            try:
-                self.file_size = self.file.size
-            except (ValueError, OSError):
-                self.file_size = 0
+            self.mime_type = mime
 
-        if self.file and not self.mime_type:
-            try:
-                # Используем python-magic для определения MIME типа
-                mime = magic.Magic(mime=True)
-                self.mime_type = mime.from_buffer(self.file.read(1024))
-                self.file.seek(0)  # Возвращаем указатель файла
-            except Exception:
-                # Fallback: определяем по расширению
-                ext = os.path.splitext(self.original_filename)[1].lower()
-                self.mime_type = self._get_mime_by_extension(ext)
+            # Определяем категорию файла
+            if mime.startswith("image/"):
+                self.file_type = "image"
+            elif mime in [
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "text/plain",
+            ]:
+                self.file_type = "document"
+            elif mime in [
+                "application/zip",
+                "application/x-rar-compressed",
+                "application/x-7z-compressed",
+            ]:
+                self.file_type = "archive"
+            else:
+                self.file_type = "other"
 
-        if self.file and not self.file_type:
-            self.file_type = self._determine_file_type()
+            # Сохраняем оригинальное имя и размер
+            self.original_filename = self.file.name.split("/")[-1]
+            self.file_size = self.file.size
 
         super().save(*args, **kwargs)
 
-    def _determine_file_type(self):
-        """Определяем тип файла по MIME типу"""
-        if not self.mime_type:
-            return self.FileType.OTHER
-
-        mime = self.mime_type.lower()
-
-        if mime.startswith("image/"):
-            return self.FileType.IMAGE
-        elif mime.startswith("video/"):
-            return self.FileType.VIDEO
-        elif mime.startswith("audio/"):
-            return self.FileType.AUDIO
-        elif mime in [
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "text/plain",
-            "text/html",
-            "application/json",
-        ]:
-            return self.FileType.DOCUMENT
-        elif mime in [
-            "application/zip",
-            "application/x-rar-compressed",
-            "application/x-tar",
-            "application/x-7z-compressed",
-        ]:
-            return self.FileType.ARCHIVE
-        else:
-            return self.FileType.OTHER
-
-    def _get_mime_by_extension(self, ext):
-        """Определяем MIME тип по расширению"""
-        mime_map = {
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".png": "image/png",
-            ".gif": "image/gif",
-            ".pdf": "application/pdf",
-            ".doc": "application/msword",
-            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            ".xls": "application/vnd.ms-excel",
-            ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            ".txt": "text/plain",
-            ".zip": "application/zip",
-            ".rar": "application/x-rar-compressed",
-        }
-        return mime_map.get(ext, "application/octet-stream")
-
-    @property
-    def file_size_human(self):
-        """Человекочитаемый размер файла"""
-        size = self.file_size
-        for unit in ["Б", "КБ", "МБ", "ГБ"]:
-            if size < 1024.0:
-                return f"{size:.2f} {unit}"
-            size /= 1024.0
-        return f"{size:.2f} ТБ"
+    def delete(self, *args, **kwargs):
+        """Удаляем физический файл при удалении записи"""
+        storage, path = self.file.storage, self.file.path
+        super().delete(*args, **kwargs)
+        storage.delete(path)
 
     @property
     def extension(self):
-        """Расширение файла"""
-        return os.path.splitext(self.original_filename)[1].lower()
+        """Возвращает расширение файла"""
+        return Path(self.original_filename).suffix.lower()
 
     @property
-    def is_image(self):
-        """Является ли файл изображением"""
-        return self.file_type == self.FileType.IMAGE
+    def file_size_human(self):
+        """Возвращает размер файла в человеко-читаемом формате"""
+        size = self.file_size
+        for unit in ["B", "KB", "MB", "GB"]:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
 
     @property
-    def is_document(self):
-        """Является ли файл документом"""
-        return self.file_type == self.FileType.DOCUMENT
+    def file_url(self):
+        """Возвращает URL для доступа к файлу"""
+        return self.file.url if self.file else None
 
-    def delete(self, *args, **kwargs):
-        """Удаляем файл с диска при удалении записи"""
-        if self.file:
-            if os.path.isfile(self.file.path):
-                os.remove(self.file.path)
-        super().delete(*args, **kwargs)
+    def increment_download_count(self):
+        """Увеличивает счетчик скачиваний"""
+        self.download_count += 1
+        self.last_accessed = timezone.now()
+        self.save(update_fields=["download_count", "last_accessed"])
 
-    def __str__(self):
-        return f"{self.original_filename} ({self.file_size_human})"
+    def can_access(self, user):
+        """Проверяет, имеет ли пользователь доступ к файлу"""
+        if self.is_public:
+            return True
 
-    class Meta:
-        verbose_name = "Файловое вложение"
-        verbose_name_plural = "Файловые вложения"
-        ordering = ["-uploaded_at"]
-        indexes = [
-            models.Index(fields=["file_type"]),
-            models.Index(fields=["uploaded_at"]),
-            models.Index(fields=["task", "project", "user"]),
-        ]
+        if not user.is_authenticated:
+            return False
+
+        # Администратор имеет доступ ко всем файлам
+        if user.role == "admin":
+            return True
+
+        # Владелец файла имеет доступ
+        if self.uploaded_by == user:
+            return True
+
+        # Проверяем доступ через связанные объекты
+        if self.user and self.user == user:
+            return True
+
+        if self.project and self.project.members.filter(id=user.id).exists():
+            return True
+
+        if self.task:
+            # Проверяем доступ через задачу
+            if self.task.assignee == user or self.task.creator == user:
+                return True
+            # Проверяем доступ через проект задачи
+            if (
+                self.task.project
+                and self.task.project.members.filter(id=user.id).exists()
+            ):
+                return True
+
+        return False
