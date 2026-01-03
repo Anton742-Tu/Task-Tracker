@@ -59,13 +59,31 @@ class LogoutView(APIView):
 
 
 class UserProfileView(APIView):
-    """Получение профиля текущего пользователя"""
+    """Получение и обновление профиля текущего пользователя"""
 
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+    def put(self, request):
+        """Обновление профиля"""
+        user = request.user
+        serializer = UserSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            # Проверяем, не пытается ли пользователь изменить свою роль
+            if "role" in serializer.validated_data and not user.is_admin:
+                return Response(
+                    {"error": "Вы не можете изменять свою роль"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Кастомный view для получения токена с дополнительной информацией
