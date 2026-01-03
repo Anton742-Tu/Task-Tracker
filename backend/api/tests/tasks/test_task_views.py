@@ -11,7 +11,7 @@ from apps.tasks.models import Task
 User = get_user_model()
 
 
-class TaskAPITestCase(TestCase):
+class TasksAPITestCase(TestCase):
     """Тесты для API задач"""
 
     def setUp(self):

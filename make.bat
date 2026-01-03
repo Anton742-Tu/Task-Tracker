@@ -87,7 +87,7 @@ if "%1"=="makemigrations" (
 )
 
 if "%1"=="test" (
-    echo Запуск всех тестов...
+    echo Запуск тестов...
     if not exist "%PYTHON_EXE%" (
         echo Ошибка: Виртуальное окружение не найдено!
         echo Запустите сначала: make install

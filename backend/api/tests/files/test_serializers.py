@@ -2,8 +2,11 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
-from api.serializers.files import (FileAttachmentSerializer,
-                                   FileUpdateSerializer, FileUploadSerializer)
+from api.files.serializers import (
+    FileAttachmentSerializer,
+    FileUploadSerializer,
+    FileUpdateSerializer
+)
 from apps.files.models import FileAttachment
 from apps.projects.models import Project
 from apps.tasks.models import Task

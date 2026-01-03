@@ -8,7 +8,7 @@ from apps.projects.models import Project
 User = get_user_model()
 
 
-class ProjectAPITestCase(TestCase):
+class ProjectsAPITestCase(TestCase):
     """Тесты для API проектов"""
 
     def setUp(self):
