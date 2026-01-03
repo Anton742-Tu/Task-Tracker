@@ -21,6 +21,7 @@ urlpatterns = [
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("auth/logout/", LogoutView.as_view(), name="logout"),
     path("auth/me/", UserProfileView.as_view(), name="user_profile"),
+    path("files/", include("api.files.urls")),
     # API
     path("", include(router.urls)),
     # Диагностика (публичный доступ)

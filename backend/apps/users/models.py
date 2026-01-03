@@ -24,6 +24,10 @@ class User(AbstractUser):
     def is_admin(self):
         return self.role == "admin"
 
+    @property
+    def is_employee(self):
+        return self.role == self.Role.EMPLOYEE
+
     def save(self, *args, **kwargs):
         # Автоматически делаем менеджеров и админов персоналом
         if self.role in ["manager", "admin"]:

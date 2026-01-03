@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "apps.projects",
     "apps.tasks",
     "apps.notifications",
+    "apps.files",
 ]
 
 # Custom user model
@@ -161,6 +162,26 @@ STATICFILES_DIRS = [
 # Media files
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Ограничения на загрузку файлов:
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_FILE_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain",
+    "application/zip",
+    "application/x-rar-compressed",
+]
+
+# Создём папку media если её нет
+os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
