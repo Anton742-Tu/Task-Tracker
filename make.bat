@@ -28,6 +28,11 @@ if "%1"=="" (
     echo Тестирование:
     echo   make test         - Запустить все тесты
     echo   make test-cov     - Тесты с отчетом о покрытии
+    echo   make test-auth    - Тесты аутентификации
+    echo   make test-files   - Тесты файлового модуля
+    echo   make test-projects - Тесты проектов
+    echo   make test-tasks   - Тесты задач
+    echo   make test-models  - Тесты моделей приложений
     echo.
     echo Качество кода:
     echo   make lint         - Проверить код (flake8, black, isort)
@@ -40,22 +45,6 @@ if "%1"=="" (
     echo   make create-users - Создать тестовых пользователей
     echo.
     echo Использование: make ^<команда^>
-    goto :end
-)
-
-if "%1"=="install" (
-    echo Установка зависимостей...
-    if not exist "%VENV_DIR%" (
-        echo Создание виртуального окружения...
-        cd %BACKEND_DIR%
-        python -m venv .venv
-        cd ..
-    )
-    cd %BACKEND_DIR%
-    call .venv\Scripts\activate.bat
-    pip install poetry
-    poetry install
-    echo ✅ Зависимости установлены
     goto :end
 )
 
@@ -98,7 +87,7 @@ if "%1"=="makemigrations" (
 )
 
 if "%1"=="test" (
-    echo Запуск тестов...
+    echo Запуск всех тестов...
     if not exist "%PYTHON_EXE%" (
         echo Ошибка: Виртуальное окружение не найдено!
         echo Запустите сначала: make install
@@ -106,6 +95,80 @@ if "%1"=="test" (
     )
     cd %BACKEND_DIR%
     %PYTHON_EXE% -m pytest -v
+    goto :end
+)
+
+if "%1"=="test-cov" (
+    echo Запуск тестов с отчетом о покрытии...
+    if not exist "%PYTHON_EXE%" (
+        echo Ошибка: Виртуальное окружение не найдено!
+        echo Запустите сначала: make install
+        goto :end
+    )
+    cd %BACKEND_DIR%
+    %PYTHON_EXE% -m pytest --cov=. --cov-report=html --cov-report=term-missing
+    echo.
+    echo Отчет о покрытии: %BACKEND_DIR%\htmlcov\index.html
+    goto :end
+)
+
+if "%1"=="test-auth" (
+    echo Запуск тестов аутентификации...
+    if not exist "%PYTHON_EXE%" (
+        echo Ошибка: Виртуальное окружение не найдено!
+        echo Запустите сначала: make install
+        goto :end
+    )
+    cd %BACKEND_DIR%
+    %PYTHON_EXE% -m pytest api/tests/auth/ -v
+    goto :end
+)
+
+if "%1"=="test-files" (
+    echo Запуск тестов файлового модуля...
+    if not exist "%PYTHON_EXE%" (
+        echo Ошибка: Виртуальное окружение не найдено!
+        echo Запустите сначала: make install
+        goto :end
+    )
+    cd %BACKEND_DIR%
+    %PYTHON_EXE% -m pytest api/tests/files/ -v
+    goto :end
+)
+
+if "%1"=="test-projects" (
+    echo Запуск тестов проектов...
+    if not exist "%PYTHON_EXE%" (
+        echo Ошибка: Виртуальное окружение не найдено!
+        echo Запустите сначала: make install
+        goto :end
+    )
+    cd %BACKEND_DIR%
+    %PYTHON_EXE% -m pytest api/tests/projects/ -v
+    goto :end
+)
+
+if "%1"=="test-tasks" (
+    echo Запуск тестов задач...
+    if not exist "%PYTHON_EXE%" (
+        echo Ошибка: Виртуальное окружение не найдено!
+        echo Запустите сначала: make install
+        goto :end
+    )
+    cd %BACKEND_DIR%
+    %PYTHON_EXE% -m pytest api/tests/tasks/ -v
+    goto :end
+)
+
+if "%1"=="test-models" (
+    echo Запуск тестов моделей приложений...
+    if not exist "%PYTHON_EXE%" (
+        echo Ошибка: Виртуальное окружение не найдено!
+        echo Запустите сначала: make install
+        goto :end
+    )
+    cd %BACKEND_DIR%
+    %PYTHON_EXE% -m pytest apps/ -v
     goto :end
 )
 
