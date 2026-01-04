@@ -16,6 +16,8 @@ class FileAttachmentSerializer(serializers.ModelSerializer):
     uploaded_by_username = serializers.CharField(
         source="uploaded_by.username", read_only=True
     )
+    is_image = serializers.SerializerMethodField()
+    is_document = serializers.SerializerMethodField()
 
     class Meta:
         model = FileAttachment
@@ -34,7 +36,7 @@ class FileAttachmentSerializer(serializers.ModelSerializer):
             "uploaded_by",
             "uploaded_by_username",
             "description",
-            "uploaded_at",
+            "upload_date",
             "is_public",
             "is_image",
             "is_document",
@@ -46,10 +48,18 @@ class FileAttachmentSerializer(serializers.ModelSerializer):
             "mime_type",
             "file_size",
             "uploaded_by",
-            "uploaded_at",
+            "upload_date",
             "is_image",
             "is_document",
         ]
+
+    def get_is_image(self, obj):
+        """Проверяет, является ли файл изображением"""
+        return obj.file_type == "image"
+
+    def get_is_document(self, obj):
+        """Проверяет, является ли файл документом"""
+        return obj.file_type == "document"
 
     def to_representation(self, instance):
         """Добавляем URL файла в ответ"""
