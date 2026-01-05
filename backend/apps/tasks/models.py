@@ -25,6 +25,14 @@ class Task(models.Model):
         related_name="tasks",
         verbose_name="Проект",
     )
+    creator = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="created_tasks",
+        verbose_name="Создатель",
+        null=True,  # или False если всегда должен быть
+        blank=True,
+    )
     assignee = models.ForeignKey(
         "users.User",
         on_delete=models.SET_NULL,
@@ -48,6 +56,15 @@ class Task(models.Model):
     due_date = models.DateField(null=True, blank=True, verbose_name="Срок выполнения")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
+
+    @property
+    def is_overdue(self):
+        """Проверяет, просрочена ли задача."""
+        if self.due_date:
+            from django.utils import timezone
+
+            return self.status != "done" and self.due_date < timezone.now().date()
+        return False
 
     class Meta:
         verbose_name = "Задача"

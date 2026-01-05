@@ -45,7 +45,7 @@ class TaskModelTestCase(TestCase):
 
     def test_task_str_method(self):
         """Тест строкового представления"""
-        expected = "Task: Test Task (todo)"
+        expected = f"{self.task.title} ({self.task.get_status_display()})"
         self.assertEqual(str(self.task), expected)
 
     def test_task_is_overdue(self):
@@ -67,7 +67,7 @@ class TaskModelTestCase(TestCase):
 
     def test_task_status_choices(self):
         """Тест допустимых значений статуса"""
-        valid_statuses = ["todo", "in_progress", "completed", "cancelled"]
+        valid_statuses = ["todo", "in_progress", "review", "done", "blocked"]
 
         for status in valid_statuses:
             task = Task.objects.create(
