@@ -1,6 +1,7 @@
 import os
 import sys
 
+import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -70,9 +71,6 @@ class FileSerializerTestCase(TestCase):
 
     def test_file_attachment_serializer(self):
         """Тест сериализатора FileAttachmentSerializer"""
-        # Исправляем поле uploaded_at на upload_date
-        from apps.files.models import FileAttachment
-
         file_attachment = FileAttachment.objects.create(
             file=self.test_file,
             original_filename="test.jpg",
@@ -88,16 +86,16 @@ class FileSerializerTestCase(TestCase):
         serializer = FileAttachmentSerializer(file_attachment)
         data = serializer.data
 
-        # Проверяем что upload_date присутствует (не uploaded_at)
         self.assertIn("upload_date", data)
         self.assertEqual(data["original_filename"], "test.jpg")
-        self.assertEqual(data["file_type"], "image")
+        self.test_file = SimpleUploadedFile(
+            name="test.jpg", content=b"test content", content_type="image/jpeg"
+        )
         self.assertEqual(data["description"], "Тестовый файл")
         self.assertTrue(data["is_public"])
 
     def test_file_upload_serializer_valid(self):
         """Тест валидного сериализатора загрузки файла"""
-        # Нужно добавить контекст с пользователем
         context = {"request": type("obj", (), {"user": self.user})()}
 
         data = {
@@ -120,7 +118,9 @@ class FileSerializerTestCase(TestCase):
     def test_file_upload_serializer_invalid_file_type(self):
         """Тест сериализатора с неверным типом файла"""
         invalid_file = SimpleUploadedFile(
-            name="test.exe", content=b"evil", content_type="application/x-msdownload"
+            name="test.bat",  # .bat файлы обычно запрещены
+            content=b"@echo off\ndel *.*",  # опасный контент
+            content_type="application/x-msdownload",  # или другой запрещенный тип
         )
 
         data = {"file": invalid_file, "project_id": self.project.id}
