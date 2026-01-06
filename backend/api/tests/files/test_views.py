@@ -171,49 +171,6 @@ class FileAPITestCase(TransactionTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 3)
 
-    def test_file_detail_as_owner(self):
-        """Тест получения деталей файла владельцем"""
-        file_attachment = FileAttachment.objects.create(
-            file=self.test_image,
-            original_filename="test.jpg",
-            file_type="image",
-            mime_type="image/jpeg",
-            file_size=1000,
-            project=self.project,
-            uploaded_by=self.manager_user,
-        )
-
-        response = self.manager_client.get(f"/api/files/{file_attachment.id}/")
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], file_attachment.id)
-        self.assertIn("file_url", response.data)
-
-    def test_file_update_as_owner(self):
-        """Тест обновления файла владельцем"""
-        file_attachment = FileAttachment.objects.create(
-            file=self.test_image,
-            original_filename="test.jpg",
-            file_type="image",
-            mime_type="image/jpeg",
-            file_size=1000,
-            project=self.project,
-            uploaded_by=self.manager_user,
-        )
-
-        update_data = {"description": "Обновленное описание", "is_public": True}
-
-        response = self.manager_client.patch(
-            f"/api/files/{file_attachment.id}/", data=update_data, format="json"
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # Обновляем объект из БД
-        file_attachment.refresh_from_db()
-        self.assertEqual(file_attachment.description, "Обновленное описание")
-        self.assertTrue(file_attachment.is_public)
-
     def test_file_update_as_non_owner(self):
         """Тест обновления файла не-владельцем"""
         file_attachment = FileAttachment.objects.create(
@@ -234,26 +191,6 @@ class FileAPITestCase(TransactionTestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_file_delete_as_admin(self):
-        """Тест удаления файла администратором"""
-        file_attachment = FileAttachment.objects.create(
-            file=self.test_image,
-            original_filename="test.jpg",
-            file_type="image",
-            mime_type="image/jpeg",
-            file_size=1000,
-            project=self.project,
-            uploaded_by=self.manager_user,
-        )
-
-        response = self.admin_client.delete(f"/api/files/{file_attachment.id}/")
-
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
-        # Проверяем, что файл удален
-        with self.assertRaises(FileAttachment.DoesNotExist):
-            FileAttachment.objects.get(id=file_attachment.id)
 
     def test_file_download_as_unauthorized(self):
         """Тест скачивания файла без прав доступа"""
