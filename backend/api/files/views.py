@@ -87,7 +87,7 @@ class FileListView(generics.ListAPIView):
         return queryset.filter(
             Q(is_public=True)
             | Q(uploaded_by=user)
-            | Q(task__assigned_to=user)
+            | Q(task__assignee=user)
             | Q(project__members=user)
         ).distinct()
 
@@ -127,7 +127,7 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
         return FileAttachment.objects.filter(
             Q(is_public=True)
             | Q(uploaded_by=user)
-            | Q(task__assigned_to=user)
+            | Q(task__assignee=user)
             | Q(project__members=user)
         ).distinct()
 
@@ -150,7 +150,7 @@ class FileDownloadView(APIView):
             can_access = True
         elif user == file_attachment.uploaded_by:
             can_access = True
-        elif file_attachment.task and file_attachment.task.assigned_to == user:
+        elif file_attachment.task and file_attachment.task.assignee == user:
             can_access = True
         elif (
             file_attachment.project

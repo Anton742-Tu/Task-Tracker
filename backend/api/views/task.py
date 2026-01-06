@@ -53,4 +53,4 @@ class TaskViewSet(viewsets.ModelViewSet):
             ).distinct()
 
         # Сотрудники видят только назначенные им задачи
-        return Task.objects.filter(assigned_to=user)
+        return Task.objects.filter(assignee=user)
