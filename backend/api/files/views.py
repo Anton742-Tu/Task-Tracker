@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.files.models import FileAttachment
+from apps.users.models import User
 from apps.users.permissions import IsAdminUser, IsManagerOrAdmin
 
 from .serializers import (FileAttachmentSerializer, FileUpdateSerializer,
@@ -87,7 +88,7 @@ class FileListView(generics.ListAPIView):
         return queryset.filter(
             Q(is_public=True)
             | Q(uploaded_by=user)
-            | Q(task__assigned_to=user)
+            | Q(task__assignee=user)
             | Q(project__members=user)
         ).distinct()
 
@@ -113,8 +114,17 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user = self.request.user
 
-        if user.is_admin:
-            return FileAttachment.objects.all()
+        # Проверяем, не является ли это фейковым представлением для генерации схемы
+        if getattr(self, "swagger_fake_view", False):
+            return User.objects.none()  # Возвращаем пустой queryset
+
+        # Безопасная проверка is_admin
+        if hasattr(user, "is_admin") and user.is_admin:
+            return User.objects.all()
+
+        # Для аутентифицированных не-админов
+        if user.is_authenticated:
+            return User.objects.filter(id=user.id)
 
         if user.is_manager:
             return FileAttachment.objects.filter(
@@ -127,7 +137,7 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
         return FileAttachment.objects.filter(
             Q(is_public=True)
             | Q(uploaded_by=user)
-            | Q(task__assigned_to=user)
+            | Q(task__assignee=user)
             | Q(project__members=user)
         ).distinct()
 
@@ -150,7 +160,7 @@ class FileDownloadView(APIView):
             can_access = True
         elif user == file_attachment.uploaded_by:
             can_access = True
-        elif file_attachment.task and file_attachment.task.assigned_to == user:
+        elif file_attachment.task and file_attachment.task.assignee == user:
             can_access = True
         elif (
             file_attachment.project

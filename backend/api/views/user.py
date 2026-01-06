@@ -17,6 +17,17 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Администраторы видят всех пользователей"""
         user = self.request.user
-        if user.is_admin:
+        # Проверяем, не является ли это фейковым представлением для генерации схемы
+        if getattr(self, "swagger_fake_view", False):
+            return User.objects.none()  # Возвращаем пустой queryset
+
+        # Безопасная проверка is_admin
+        if hasattr(user, "is_admin") and user.is_admin:
             return User.objects.all()
+
+        # Для аутентифицированных не-админов
+        if user.is_authenticated:
+            return User.objects.filter(id=user.id)
+
+        # Для анонимных пользователей
         return User.objects.none()

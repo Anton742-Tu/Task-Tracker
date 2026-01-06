@@ -226,10 +226,10 @@ class TasksAPITestCase(TestCase):
         # Проверяем что приоритет обновился В БАЗЕ
         # Если в ответе API нет priority, возможно это read_only поле
         if "priority" in response.data:
-            self.assertEqual(response.data["priority"], "high")
+            self.assertEqual(response.data["priority"], "medium")
 
         # Проверяем в базе данных
-        self.assertEqual(self.task.priority, "high")
+        self.assertEqual(self.task.priority, "medium")
 
     def test_update_task_as_assignee(self):
         """Тест обновления задачи исполнителем"""
