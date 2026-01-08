@@ -1,9 +1,12 @@
+import logging
 import os
 import sys
 from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 # Загружаем переменные окружения
 load_dotenv()
@@ -16,6 +19,14 @@ sys.path.insert(0, os.path.join(BASE_DIR, "apps"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True") == "True"
+
+# При определении DEBUG
+if "test" in sys.argv:
+    DEBUG = False
+    logger.info("Тестовый режим: DEBUG=False")
+else:
+    DEBUG = os.getenv("DEBUG", "True") == "True"
+    logger.info(f"Режим разработки: DEBUG={DEBUG}")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
