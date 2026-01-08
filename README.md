@@ -128,8 +128,8 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 
 # Установка зависимостей через Poetry
-pip install poetry
-poetry install
+# pip install poetry
+# poetry install
 
 # Или через requirements.txt
 pip install -r requirements.txt
@@ -357,13 +357,16 @@ pytest
 pytest --cov=.
 
 # Запуск конкретного модуля тестов
-pytest apps/files/tests/
+pytest apps/projects/tests/
+pytest apps/tasks/tests/
+pytest apps/users/tests/
+pytest api/tests/
 
 # Генерация отчета о покрытии
 pytest --cov=. --cov-report=html
 
 # Запуск тестов файлового модуля
-pytest api/files/tests/ -v
+pytest api/tests/ -v
 ```
 ## 📈 Дорожная карта развития
 ### Версия 1.0 (реализовано)
