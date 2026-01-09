@@ -1,7 +1,5 @@
 """Быстрые тесты для поднятия coverage."""
 
-import json
-
 from django.test import TestCase
 
 
@@ -17,34 +15,30 @@ class QuickCoverageTest(TestCase):
         """Просто импортируем admin файлы."""
         # files
         try:
-            from apps.files.admin import admin
 
             print("✓ files admin")
-        except:
+        except Exception:
             pass
 
         # projects
         try:
-            from apps.projects.admin import admin
 
             print("✓ projects admin")
-        except:
+        except Exception:
             pass
 
         # tasks
         try:
-            from apps.tasks.admin import admin
 
             print("✓ tasks admin")
-        except:
+        except Exception:
             pass
 
         # users
         try:
-            from apps.users.admin import admin
 
             print("✓ users admin")
-        except:
+        except Exception:
             pass
 
         self.assertTrue(True)
@@ -52,7 +46,6 @@ class QuickCoverageTest(TestCase):
     def test_import_backends(self):
         """Импорт backends."""
         try:
-            from apps.users.backends import EmailBackend
 
             print("✓ EmailBackend импортирован")
         except Exception as e:

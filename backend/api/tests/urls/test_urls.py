@@ -33,7 +33,7 @@ class UrlTests(TestCase):
                 url = reverse(view_name)
                 self.assertEqual(url, expected_path)
                 print(f"✓ URL найден: {view_name} -> {url}")
-            except:
+            except Exception:
                 print(f"⚠ URL не найден: {view_name}")
                 # Пропускаем если URL не существует
 
@@ -48,7 +48,7 @@ class UrlTests(TestCase):
                 url = reverse(f"api:{resource}:list")
                 self.assertTrue(url.startswith(f"/api/{resource}/"))
                 print(f"✓ Ресурс найден: {resource} -> {url}")
-            except:
+            except Exception:
                 print(f"⚠ Ресурс не найден или не имеет list view: {resource}")
 
     def test_url_resolution(self):
@@ -64,7 +64,7 @@ class UrlTests(TestCase):
                 resolved = resolve(path)
                 self.assertEqual(resolved.view_name, expected_view)
                 print(f"✓ Разрешение корректно: {path} -> {resolved.view_name}")
-            except:
+            except Exception:
                 print(f"⚠ Не удалось разрешить: {path}")
 
     def test_all_registered_urls(self):

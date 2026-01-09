@@ -48,17 +48,17 @@ class AuthViewsTest(TestCase):
                 # Если есть access токен
                 if "access" in response_data:
                     self.assertIsInstance(response_data["access"], str)
-                    print(f"✓ Access токен получен")
+                    print("✓ Access токен получен")
 
                 # Если есть refresh токен
                 if "refresh" in response_data:
                     self.assertIsInstance(response_data["refresh"], str)
-                    print(f"✓ Refresh токен получен")
+                    print("✓ Refresh токен получен")
 
                 # Если есть информация о пользователе
                 if "user" in response_data:
                     self.assertEqual(response_data["user"]["username"], "testuser")
-                    print(f"✓ Информация о пользователе получена")
+                    print("✓ Информация о пользователе получена")
 
                 return
 
@@ -74,8 +74,7 @@ class AuthViewsTest(TestCase):
         response = self.client.post("/api/auth/login/", data, format="json")
 
         if response.status_code in [200, 201]:
-            print(f"Успешный вход по email")
-            response_data = response.json()
+            print("Успешный вход по email")
 
             # Проверяем что ответ содержит что-то полезное
             self.assertIn(

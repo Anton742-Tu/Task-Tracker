@@ -37,7 +37,7 @@ class SimpleDiagnosticTest(TestCase):
                     print(f"  Контент: {response.content[:200]}...")
             else:
                 # Не JSON, но endpoint существует
-                print(f"  Не-JSON ответ (возможно HTML страница)")
+                print("  Не-JSON ответ (возможно HTML страница)")
                 print(f"  Контент начинается с: {str(response.content)[:100]}...")
 
         elif response.status_code == 404:
@@ -80,7 +80,7 @@ class SimpleDiagnosticTest(TestCase):
                     try:
                         data = json.loads(response.content)
                         print(f"  JSON ответ, ключи: {list(data.keys())}")
-                    except:
+                    except Exception:
                         pass
 
                 return  # Нашли working endpoint
