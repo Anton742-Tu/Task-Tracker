@@ -13,15 +13,63 @@ jobs:
           POSTGRES_DB: test_db
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
         ports:
           - 5432:5432
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: backend/requirements.txt
 
-    - run: cd backend && pip install -r requirements.txt
-    - run: cd backend && python manage.py test
-    - run: cd backend && python manage.py check
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libmagic1 \
+          libpq-dev \
+          postgresql-client
+
+    - name: Install Python dependencies
+      run: |
+        cd backend
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Set up environment
+      run: |
+        cd backend
+        echo "DEBUG=False" > .env
+        echo "SECRET_KEY=test-secret-key-for-ci" >> .env
+        echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> .env
+        echo "USE_POSTGRES=True" >> .env
+        echo "POSTGRES_DB=test_db" >> .env
+        echo "POSTGRES_USER=postgres" >> .env
+        echo "POSTGRES_PASSWORD=postgres" >> .env
+        echo "POSTGRES_HOST=localhost" >> .env
+        echo "POSTGRES_PORT=5432" >> .env
+
+    - name: Run migrations
+      run: |
+        cd backend
+        python manage.py migrate
+
+    - name: Run tests
+      run: |
+        cd backend
+        pytest
+
+    - name: Check Django health
+      run: |
+        cd backend
+        python manage.py check
