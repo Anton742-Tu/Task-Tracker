@@ -1,7 +1,6 @@
 import uuid
 
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -100,7 +99,7 @@ class ProjectWorkflowTestCase(TestCase):
         print(f"2. Create task: {response.status_code}")
 
         if response.status_code != 201:
-            print(f"   Task creation failed. Trying alternative...")
+            print("   Task creation failed. Trying alternative...")
 
             # Пробуем добавить обязательные поля
             task_data_with_assignee = {

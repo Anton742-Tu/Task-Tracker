@@ -96,8 +96,6 @@ class TasksAPITestCase(TestCase):
 
         print(f"\n[test_create_task] Создание задачи: {task_title}")
 
-        initial_count = Task.objects.count()
-
         response = self.manager_client.post("/api/tasks/", data, format="json")
 
         print(f"Статус ответа: {response.status_code}")
