@@ -2,8 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.test import TestCase
 
-from apps.users.permissions import (IsAdminUser, IsEmployeeOrHigher,
-                                    IsManagerOrAdmin)
+from apps.users.permissions import IsAdminUser, IsEmployeeOrHigher, IsManagerOrAdmin
 
 User = get_user_model()
 
@@ -109,8 +108,12 @@ class UserPermissionsTest(TestCase):
 
     def test_permission_classes_can_be_imported(self):
         """Тест что все permission классы можно импортировать."""
-        from apps.users.permissions import (IsAdminUser, IsEmployeeOrHigher,
-                                            IsManagerOrAdmin, IsProjectMember)
+        from apps.users.permissions import (
+            IsAdminUser,
+            IsEmployeeOrHigher,
+            IsManagerOrAdmin,
+            IsProjectMember,
+        )
 
         # Создаем экземпляры
         admin_perm = IsAdminUser()

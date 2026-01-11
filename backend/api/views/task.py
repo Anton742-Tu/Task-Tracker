@@ -1,8 +1,7 @@
 from django.db.models import Q
 from rest_framework import permissions, viewsets
 
-from api.permissions import (IsAdminUser, IsManagerOrAdmin,
-                             IsTaskAssigneeOrAdmin)
+from api.permissions import IsAdminUser, IsManagerOrAdmin, IsTaskAssigneeOrAdmin
 from api.serializers.task import TaskSerializer
 from apps.tasks.models import Task
 

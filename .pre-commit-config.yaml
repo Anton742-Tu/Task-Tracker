@@ -8,20 +8,19 @@
       - id: check-json
 
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 25.12.0  # ТА ЖЕ версия что и локально
     hooks:
       - id: black
+        name: black (check only)
         files: ^backend/
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        files: ^backend/
+        args: [--check]  # ← ТОЛЬКО ПРОВЕРКА, без изменений
+        stages: [commit]
 
   - repo: https://github.com/pycqa/flake8
-    rev: 6.1.0  # Старая, но совместимая версия
+    rev: 6.1.0
     hooks:
       - id: flake8
+        name: flake8
         files: ^backend/
-      # Без flake8-django - добавите позже если нужно
+        args: [--max-line-length=88, --max-complexity=10]
+        stages: [commit]
