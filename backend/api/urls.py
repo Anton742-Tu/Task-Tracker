@@ -2,8 +2,12 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from api.views.auth import (CustomTokenObtainPairView, LogoutView,
-                            RegisterView, UserProfileView)
+from api.views.auth import (
+    CustomTokenObtainPairView,
+    LogoutView,
+    RegisterView,
+    UserProfileView,
+)
 from api.views.home import home_view
 from api.views.project import ProjectViewSet
 from api.views.task import TaskViewSet

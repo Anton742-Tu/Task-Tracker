@@ -2,6 +2,7 @@ import uuid
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -49,7 +50,14 @@ class ProjectWorkflowTestCase(TestCase):
         """Упрощенный workflow проекта: только создание проекта и задач"""
         print("\n=== Starting simplified project workflow test ===")
 
-        # 1. Создаем проект
+        # 1. Создаем проект - ИСПОЛЬЗУЕМ REVERSE
+        try:
+            # Пробуем получить URL по имени
+            project_list_url = reverse("project-list")  # Для ViewSet это 'project-list'
+        except Exception:
+            # Если не находит по имени, используем прямой URL
+            project_list_url = "/api/projects/"
+
         project_data = {
             "name": "Simple Test Project",
             "description": "Простой тестовый проект",
@@ -58,63 +66,71 @@ class ProjectWorkflowTestCase(TestCase):
         }
 
         response = self.manager_client.post(
-            "/api/projects/", project_data, format="json"
+            project_list_url, project_data, format="json"
         )
-        print(f"1. Create project: {response.status_code}")
+        print(f"1. Create project at {project_list_url}: {response.status_code}")
 
-        if response.status_code == 404:
-            print("   WARNING: /api/projects/ endpoint not found")
-            print("   Trying alternative endpoint: /projects/")
+        # Проверяем если это редирект (301)
+        if response.status_code == 301:
+            print(f"   Redirect detected to: {response.url}")
+            # Следуем за редиректом с follow=True
             response = self.manager_client.post(
-                "/projects/", project_data, format="json"
+                project_list_url, project_data, format="json", follow=True
             )
+            print(f"   After follow: {response.status_code}")
 
-        print(f"   Final status: {response.status_code}")
+        # Отладочная информация
+        print(f"   Response headers: {dict(response.headers)}")
+        if hasattr(response, "data"):
+            print(f"   Response data: {response.data}")
+        else:
+            print(f"   Response content: {response.content}")
 
-        # Если endpoint не найден, проверяем доступность API
-        if response.status_code in [404, 405]:
-            print("   API endpoints may not be configured. Checking URLs...")
-
-            # Проверяем доступные endpoints
-            for url in ["/api/projects/", "/projects/", "/api/tasks/", "/tasks/"]:
-                test_response = self.client.get(url)
-                print(f"   {url}: {test_response.status_code}")
-
-            self.skipTest("API endpoints not properly configured")
-
+        # Ожидаем 201 Created
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        project_id = response.data["id"]
+
+        # Получаем ID проекта
+        if response.status_code == 201:
+            project_id = response.data.get("id")
+        else:
+            # Если не 201, пытаемся найти проект другим способом
+            from apps.projects.models import Project
+
+            project = Project.objects.filter(name="Simple Test Project").first()
+            project_id = project.id if project else None
+            if not project_id:
+                self.skipTest("Could not create or find project")
+                return
+
         print(f"   Project ID: {project_id}")
 
-        # 2. Создаем задачу
+        # 2. Создаем задачу - ИСПОЛЬЗУЕМ REVERSE
+        try:
+            task_list_url = reverse("task-list")  # Для ViewSet это 'task-list'
+        except Exception:
+            task_list_url = "/api/tasks/"
+
         task_data = {
             "title": "Test Task",
             "description": "Test description",
             "project": project_id,
             "status": "todo",
             "priority": "medium",
+            "assignee": self.employee1.id,  # Добавляем assignee
         }
 
-        response = self.manager_client.post("/api/tasks/", task_data, format="json")
-        print(f"2. Create task: {response.status_code}")
+        response = self.manager_client.post(task_list_url, task_data, format="json")
+        print(f"2. Create task at {task_list_url}: {response.status_code}")
 
-        if response.status_code != 201:
-            print("   Task creation failed. Trying alternative...")
-
-            # Пробуем добавить обязательные поля
-            task_data_with_assignee = {
-                **task_data,
-                "assignee": self.employee1.id,
-                "creator": self.manager.id,
-            }
+        # Проверяем редирект
+        if response.status_code == 301:
+            print(f"   Redirect detected to: {response.url}")
             response = self.manager_client.post(
-                "/api/tasks/", task_data_with_assignee, format="json"
+                task_list_url, task_data, format="json", follow=True
             )
-            print(f"   Retry with assignee: {response.status_code}")
+            print(f"   After follow: {response.status_code}")
 
-        # Принимаем 200 или 201 как успех
-        self.assertIn(
-            response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK]
-        )
+        # Проверяем результат
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         print("✅ Basic project workflow test passed!")

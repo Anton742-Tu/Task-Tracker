@@ -2,8 +2,7 @@ from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets
 
-from api.permissions import (IsAdminUser, IsManagerOrAdmin,
-                             IsProjectMemberOrAdmin)
+from api.permissions import IsAdminUser, IsManagerOrAdmin, IsProjectMemberOrAdmin
 from api.serializers.project import ProjectSerializer
 from apps.projects.models import Project
 
