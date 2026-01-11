@@ -1,0 +1,20 @@
+# Минимальный набор для работы
+Django==6.0
+djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
+django-cors-headers==4.9.0
+django-filter==25.2
+drf-yasg==1.21.11
+psycopg2-binary==2.9.11
+pillow==12.0.0
+python-dotenv==1.2.1
+whitenoise==6.12.0
+
+# Для разработки
+black==24.1.1
+flake8==6.1.0
+isort==5.13.2
+pytest==7.4.4
+pytest-django==4.11.1
+pytest-cov==4.1.0
+pre-commit==4.5.1
