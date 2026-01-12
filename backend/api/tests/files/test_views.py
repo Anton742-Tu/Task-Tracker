@@ -99,7 +99,7 @@ class FileAPITestCase(TransactionTestCase):
         self.assertIn("file", response.data)
         self.assertEqual(response.data["file"]["description"], "Тестовое изображение")
         self.assertTrue(response.data["file"]["is_public"])
-        self.assertEqual(response.data["file"]["file_type"], "document")
+        self.assertEqual(response.data["file"]["file_type"], "image")
 
     def test_file_upload_as_employee_without_permission(self):
         """Тест загрузки файла сотрудником (без прав)"""

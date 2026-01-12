@@ -5,8 +5,11 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
-# from api.files.serializers import (FileAttachmentSerializer,
-#                                   FileUpdateSerializer, FileUploadSerializer)
+# from api.files.serializers import (
+#     FileAttachmentSerializer,
+#     FileUpdateSerializer,
+#     FileUploadSerializer,
+# )
 from apps.files.models import FileAttachment
 
 User = get_user_model()

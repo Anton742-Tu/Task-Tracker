@@ -2,7 +2,7 @@ import mimetypes
 import os
 from pathlib import Path
 
-import magic
+import filetype
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -14,14 +14,22 @@ User = get_user_model()
 
 
 def validate_file_type(value):
-    """Валидатор для проверки типа файла"""
-    # Получаем MIME тип
+    """Валидатор для проверки типа файла с использованием filetype"""
+    # Читаем начало файла
+    value.seek(0)
+    file_content = value.read(1024)
+    value.seek(0)  # Возвращаемся в начало файла
+
+    # Используем filetype для определения реального типа файла
     try:
-        # Используем python-magic для определения реального типа файла
-        mime = magic.from_buffer(value.read(1024), mime=True)
-        value.seek(0)  # Возвращаемся в начало файла
-    except (magic.MagicException, AttributeError):
-        # Если не удалось определить через magic, используем расширение
+        kind = filetype.guess(file_content)
+        if kind:
+            mime = kind.mime
+        else:
+            # Если filetype не определил, используем расширение
+            mime = mimetypes.guess_type(value.name)[0]
+    except Exception:
+        # Если ошибка, используем расширение
         mime = mimetypes.guess_type(value.name)[0]
 
     if not mime:
@@ -140,7 +148,6 @@ class FileAttachment(models.Model):
             models.Index(fields=["file_type"]),
             models.Index(fields=["is_public"]),
             models.Index(fields=["uploaded_by"]),
-            # ВАЖНО: исправляем индексы - используем существующие поля
             models.Index(fields=["project"]),
             models.Index(fields=["task"]),
             models.Index(fields=["user"]),
@@ -152,56 +159,118 @@ class FileAttachment(models.Model):
     def save(self, *args, **kwargs):
         """Переопределяем save для автоматического определения типа файла"""
         if not self.pk:  # Только при создании
-            # Определяем MIME тип
-            if hasattr(self.file, "file"):
-                self.file.seek(0)
-                mime = magic.from_buffer(self.file.read(1024), mime=True)
-                self.file.seek(0)
-            else:
-                mime = (
-                    mimetypes.guess_type(self.original_filename)[0]
-                    or "application/octet-stream"
-                )
-
-            self.mime_type = mime
-
-            # Определяем категорию файла
-            if mime.startswith("image/"):
-                self.file_type = "image"
-            elif mime in [
-                "application/pdf",
-                "application/msword",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "application/vnd.ms-excel",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "text/plain",
-            ]:
-                self.file_type = "document"
-            elif mime in [
-                "application/zip",
-                "application/x-rar-compressed",
-                "application/x-7z-compressed",
-            ]:
-                self.file_type = "archive"
-            else:
-                self.file_type = "other"
-
-            # Сохраняем оригинальное имя и размер
-            self.original_filename = self.file.name.split("/")[-1]
-            self.file_size = self.file.size
+            self._determine_file_metadata()
 
         super().save(*args, **kwargs)
 
+    def _determine_file_metadata(self):
+        """Определение метаданных файла (вынесено для уменьшения сложности)"""
+        self._determine_mime_type()
+        self._determine_file_category()
+        self._set_filename_and_size()
+
+    def _determine_mime_type(self):
+        """Определение MIME типа с помощью filetype"""
+        try:
+            # Подготовка данных для filetype
+            if hasattr(self.file, "file"):
+                self.file.seek(0)
+                file_content = self.file.read(1024)
+                self.file.seek(0)
+                kind = filetype.guess(file_content)
+            else:
+                self.file.seek(0)
+                file_content = self.file.read(1024)
+                self.file.seek(0)
+                kind = filetype.guess(file_content)
+
+            if kind:
+                self.mime_type = kind.mime
+                return
+        except Exception as e:
+            print(f"Error determining MIME type with filetype: {e}")
+
+        # Fallback: используем расширение
+        self.mime_type = self._get_mime_from_extension()
+
+    def _get_mime_from_extension(self):
+        """Получение MIME типа по расширению файла"""
+        filename = None
+
+        if hasattr(self, "original_filename") and self.original_filename:
+            filename = self.original_filename
+        elif hasattr(self.file, "name"):
+            filename = self.file.name
+
+        if filename:
+            mime = mimetypes.guess_type(filename)[0]
+            if mime:
+                return mime
+
+        return "application/octet-stream"
+
+    def _determine_file_category(self):
+        """Определение категории файла по MIME типу"""
+        mime = self.mime_type
+
+        # Список документов
+        document_mimes = [
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "text/plain",
+        ]
+
+        # Список архивов
+        archive_mimes = [
+            "application/zip",
+            "application/x-rar-compressed",
+            "application/x-7z-compressed",
+        ]
+
+        if mime.startswith("image/"):
+            self.file_type = "image"
+        elif mime in document_mimes:
+            self.file_type = "document"
+        elif mime in archive_mimes:
+            self.file_type = "archive"
+        else:
+            self.file_type = "other"
+
+    def _set_filename_and_size(self):
+        """Установка имени файла и размера"""
+        # Имя файла
+        if hasattr(self.file, "name"):
+            self.original_filename = self.file.name.split("/")[-1]
+        elif not hasattr(self, "original_filename") or not self.original_filename:
+            self.original_filename = f"file_{timezone.now().strftime('%Y%m%d_%H%M%S')}"
+
+        # Размер файла
+        if hasattr(self.file, "size"):
+            self.file_size = self.file.size
+        elif not hasattr(self, "file_size") or not self.file_size:
+            self.file_size = 0
+
     def delete(self, *args, **kwargs):
         """Удаляем физический файл при удалении записи"""
-        storage, path = self.file.storage, self.file.path
-        super().delete(*args, **kwargs)
-        storage.delete(path)
+        if self.file:
+            storage, path = self.file.storage, self.file.path
+            super().delete(*args, **kwargs)
+            try:
+                storage.delete(path)
+            except Exception:
+                pass  # Игнорируем ошибки удаления файла
+        else:
+            super().delete(*args, **kwargs)
 
     @property
     def extension(self):
         """Возвращает расширение файла"""
-        return Path(self.original_filename).suffix.lower()
+        if self.original_filename:
+            return Path(self.original_filename).suffix.lower()
+        return ""
 
     @property
     def file_size_human(self):
