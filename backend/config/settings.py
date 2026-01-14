@@ -17,12 +17,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Add apps to Python path
 sys.path.insert(0, os.path.join(BASE_DIR, "apps"))
 
-# Проверяем среду выполнения
-TESTING = "test" in sys.argv
-CI = os.environ.get("CI", "false").lower() == "true"
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True") == "True" and not TESTING
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
 # При определении DEBUG
 if "test" in sys.argv:
@@ -45,62 +41,21 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 if not DEBUG:
     ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
-# Database - PostgreSQL
-USE_POSTGRES = os.getenv("USE_POSTGRES", "False") == "True"
-
-# Для тестов и CI всегда используем SQLite
-if TESTING or CI:
-    # Используем SQLite для тестов (быстрее и не требует внешней БД)
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",  # In-memory база для скорости
-        }
+# Database
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB", "task_tracker"),
+        "USER": os.getenv("POSTGRES_USER", "postgres"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
+        "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "CONN_MAX_AGE": 600,
+        "OPTIONS": {
+            "connect_timeout": 10,
+        },
     }
-    print("⚠ Используется SQLite для тестов/CI")
-elif USE_POSTGRES:
-    # Используем PostgreSQL для разработки/продакшена
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("POSTGRES_DB", "task_tracker"),
-            "USER": os.getenv("POSTGRES_USER", "postgres"),
-            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
-            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
-            "PORT": os.getenv("POSTGRES_PORT", "5432"),
-            "CONN_MAX_AGE": 600,  # 10 minutes connection persistence
-            "OPTIONS": {
-                "connect_timeout": 10,
-            },
-        }
-    }
-    print("⚠ Используется PostgreSQL")
-else:
-    # Используем SQLite (по умолчанию)
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": str(BASE_DIR / "db.sqlite3"),
-        }
-    }
-    print("⚠ Используется SQLite (по умолчанию)")
-
-# Ускорение тестов
-if TESTING:
-    # Используем быстрый hasher для тестов
-    PASSWORD_HASHERS = [
-        "django.contrib.auth.hashers.MD5PasswordHasher",
-    ]
-
-    # Отключаем отправку email
-    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-
-    # Отключаем кэширование
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-        }
-    }
+}
 
 # Application definition
 INSTALLED_APPS = [
