@@ -48,8 +48,18 @@ if not DEBUG:
 # Database - PostgreSQL
 USE_POSTGRES = os.getenv("USE_POSTGRES", "False") == "True"
 
-if USE_POSTGRES:
-    # Используем PostgreSQL
+# Для тестов и CI всегда используем SQLite
+if TESTING or CI:
+    # Используем SQLite для тестов (быстрее и не требует внешней БД)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",  # In-memory база для скорости
+        }
+    }
+    print("⚠ Используется SQLite для тестов/CI")
+elif USE_POSTGRES:
+    # Используем PostgreSQL для разработки/продакшена
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -64,12 +74,31 @@ if USE_POSTGRES:
             },
         }
     }
+    print("⚠ Используется PostgreSQL")
 else:
     # Используем SQLite (по умолчанию)
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": str(BASE_DIR / "db.sqlite3"),
+        }
+    }
+    print("⚠ Используется SQLite (по умолчанию)")
+
+# Ускорение тестов
+if TESTING:
+    # Используем быстрый hasher для тестов
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.MD5PasswordHasher",
+    ]
+
+    # Отключаем отправку email
+    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+
+    # Отключаем кэширование
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
         }
     }
 
