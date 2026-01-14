@@ -45,26 +45,31 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 if not DEBUG:
     ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
-# База данных
-if CI or TESTING:
-    # Используем SQLite для тестов и CI
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",  # или BASE_DIR / 'test_db.sqlite3'
-        }
-    }
-    print("⚠ Используется SQLite для тестов")
-else:
-    # PostgreSQL для продакшена/разработки
+# Database - PostgreSQL
+USE_POSTGRES = os.getenv("USE_POSTGRES", "False") == "True"
+
+if USE_POSTGRES:
+    # Используем PostgreSQL
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("POSTGRES_DB", "task_tracker"),
-            "USER": os.environ.get("POSTGRES_USER", "postgres"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
-            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "NAME": os.getenv("POSTGRES_DB", "task_tracker"),
+            "USER": os.getenv("POSTGRES_USER", "postgres"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
+            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+            "PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "CONN_MAX_AGE": 600,  # 10 minutes connection persistence
+            "OPTIONS": {
+                "connect_timeout": 10,
+            },
+        }
+    }
+else:
+    # Используем SQLite (по умолчанию)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": str(BASE_DIR / "db.sqlite3"),
         }
     }
 
