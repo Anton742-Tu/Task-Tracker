@@ -1,42 +1,35 @@
-﻿version: '3.8'
+﻿# docker-compose.yml
+version: '3.8'
 
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: task-tracker-postgres
     environment:
-      POSTGRES_DB: task_tracker
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME:-task_tracker_dev}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres-init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - task-tracker-network
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: task-tracker-pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
     ports:
-      - "5050:80"
+      - "8000:8000"
+    environment:
+      - DJANGO_ENVIRONMENT=${DJANGO_ENVIRONMENT:-development}
+      - DB_HOST=postgres
+    env_file:
+      - .env  # загружаем локальные переменные
+    volumes:
+      - ./backend:/app
+      - ./backend/media:/app/media
     depends_on:
       - postgres
-    networks:
-      - task-tracker-network
+    command: python manage.py runserver 0.0.0.0:8000
 
 volumes:
   postgres_data:
-
-networks:
-  task-tracker-network:
-    driver: bridge
