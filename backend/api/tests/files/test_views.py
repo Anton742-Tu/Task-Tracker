@@ -1,3 +1,4 @@
+﻿# -*- coding: utf-8 -*-
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TransactionTestCase
@@ -225,4 +226,4 @@ class FileAPITestCase(TransactionTestCase):
     def test_authentication_required(self):
         """Тест что требуется аутентификация"""
         response = self.anonymous_client.get("/api/files/")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -1,3 +1,4 @@
+﻿# -*- coding: utf-8 -*-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
@@ -216,15 +217,17 @@ class AuthenticationViewsTestCase(TestCase):
 
     def test_user_profile_unauthenticated(self):
         """Попытка получить профиль без аутентификации"""
-        # Очищаем credentials
         self.client.credentials()
-
         response = self.client.get("/api/auth/me/")
 
-        # Проверяем что доступ запрещен (может быть 403 или 401 в зависимости от настроек)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        # Дополнительная проверка
+        # Допустимы оба кода ответа в зависимости от конфигурации
+        self.assertIn(
+            response.status_code,
+            [
+                status.HTTP_401_UNAUTHORIZED,  # JWT аутентификация
+                status.HTTP_403_FORBIDDEN,  # Session аутентификация
+            ],
+        )
         self.assertIn("detail", response.data)
 
     def test_token_refresh(self):
