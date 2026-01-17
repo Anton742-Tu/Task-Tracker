@@ -22,5 +22,5 @@
       - id: flake8
         name: flake8
         files: ^backend/
-        args: [--max-line-length=88, --max-complexity=10]
+        args: [--max-line-length=119, --max-complexity=10]
         stages: [commit]

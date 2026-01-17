@@ -4,6 +4,7 @@
 
 import os
 from .base import *  # Не волнуемся о F403, это нужно для Django
+from .debug_toolbar_settings import DEBUG_TOOLBAR_CONFIG
 
 # Debug mode
 DEBUG = True

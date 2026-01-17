@@ -1,4 +1,3 @@
-# apps/users/models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -14,17 +13,6 @@ class User(AbstractUser):
     bio = models.TextField(blank=True, null=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
 
-    # Добавляем недостающие поля
-    phone = models.CharField(
-        max_length=20, blank=True, null=True, verbose_name="Телефон"
-    )
-    department = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Отдел"
-    )
-    position = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Должность"
-    )
-
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
 
@@ -38,7 +26,7 @@ class User(AbstractUser):
 
     @property
     def is_employee(self):
-        return self.role == "employee"  # Исправлено: было self.Role.EMPLOYEE
+        return self.role == self.Role.EMPLOYEE
 
     def save(self, *args, **kwargs):
         # Автоматически делаем менеджеров и админов персоналом
@@ -57,5 +45,3 @@ class User(AbstractUser):
 
     class Meta:
         db_table = "users_user"
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
