@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 from django.test import TestCase
 
 
 class AdminImportsTest(TestCase):
-    """Тесты для импорта admin файлов (поднятие coverage)."""
+    """Tests for admin files import"""
 
     def test_admin_files_can_be_imported(self):
         """Тест что все admin файлы можно импортировать."""

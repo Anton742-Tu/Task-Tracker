@@ -1,3 +1,4 @@
+﻿# -*- coding: utf-8 -*-
 """Быстрые тесты для поднятия coverage."""
 
 from django.test import TestCase
