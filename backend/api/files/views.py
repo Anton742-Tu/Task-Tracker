@@ -9,8 +9,11 @@ from apps.files.models import FileAttachment
 from apps.users.models import User
 from apps.users.permissions import IsAdminUser, IsManagerOrAdmin
 
-from .serializers import (FileAttachmentSerializer, FileUpdateSerializer,
-                          FileUploadSerializer)
+from .serializers import (
+    FileAttachmentSerializer,
+    FileUpdateSerializer,
+    FileUploadSerializer,
+)
 
 
 class FileUploadView(APIView):

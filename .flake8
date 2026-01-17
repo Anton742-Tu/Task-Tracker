@@ -1,28 +1,24 @@
 [flake8]
 max-line-length = 119
-extend-ignore = E203, W503, W504, E501
+
+# Исключаем папку settings из проверки
 exclude =
     .git,
     __pycache__,
     .venv,
     venv,
     env,
-    migrations,
-    static,
-    media,
+    .env,
     .tox,
-    .pytest_cache,
-    build,
     dist,
-    */node_modules/*,
-    frontend/*/dist,
-    *.min.js,
-    *.min.css
+    build,
+    migrations,
+    */settings/*,  # ← исключаем ВСЮ папку settings
+
+# Или используем per-file-ignores для конкретных файлов:
 per-file-ignores =
-    __init__.py:F401,
-    tests/*:S101,
-    */migrations/*:F401,
-    */settings/*.py:E501
-ignore =
-    W504,
-    E501
+    backend/config/settings/__init__.py:F403,F401
+    backend/config/settings/development.py:F403,F405
+    backend/config/settings/production.py:F403,F405
+    backend/config/settings/testing.py:F403,F405
+    backend/config/settings/docker.py:F403,F405

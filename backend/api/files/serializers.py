@@ -1,4 +1,4 @@
-import magic
+import filetype
 from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from rest_framework import serializers
@@ -114,15 +114,23 @@ class FileUploadSerializer(serializers.Serializer):
                 f"Файл слишком большой. Максимальный размер: {settings.MAX_UPLOAD_SIZE // (1024 * 1024)}MB"
             )
 
-        # Определяем MIME тип
+        # Определяем MIME тип с помощью filetype
         try:
-            mime = magic.Magic(mime=True)
-            file_content = value.read(1024)
-            value.seek(0)
-            mime_type = mime.from_buffer(file_content)
-        except Exception:
-            # Если не удалось определить, используем тип из файла
-            mime_type = value.content_type
+            # Читаем начало файла для определения типа
+            file_content = value.read(2048)  # ← ПЕРВОЕ: читаем файл
+            value.seek(0)  # Возвращаем указатель на начало
+
+            # Используем filetype для определения MIME типа
+            kind = filetype.guess(file_content)  # ← ВТОРОЕ: определяем тип
+            if kind:
+                mime_type = kind.mime
+            else:
+                # Если filetype не смог определить
+                mime_type = value.content_type or "application/octet-stream"
+        except Exception as e:
+            # Если ошибка, используем content_type из файла
+            print(f"Error determining file type: {e}")
+            mime_type = value.content_type or "application/octet-stream"
 
         # Проверяем разрешенные типы
         if mime_type not in settings.ALLOWED_FILE_TYPES:

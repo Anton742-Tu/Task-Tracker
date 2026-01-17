@@ -47,3 +47,36 @@ staticfiles/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Django
+local_settings.py
+db.sqlite3-journal
+
+# Virtual environments
+ENV/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+.env.testing
+.env.docker
+!.env.example
+!.env.*.example
+
+# Docker
+docker-compose.override.yml
+
+# Coverage
+.coverage
+htmlcov/
+.coverage.*
+*.cover
+.hypothesis/
+
+# Test media
+test_media/
+
+# Project specific
+logs/

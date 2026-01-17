@@ -5,8 +5,11 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
-# from api.files.serializers import (FileAttachmentSerializer,
-#                                   FileUpdateSerializer, FileUploadSerializer)
+# from api.files.serializers import (
+#     FileAttachmentSerializer,
+#     FileUpdateSerializer,
+#     FileUploadSerializer,
+# )
 from apps.files.models import FileAttachment
 
 User = get_user_model()
@@ -17,14 +20,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 try:
     # Пробуем разные пути импорта
-    from api.files.serializers import (FileAttachmentSerializer,
-                                       FileUpdateSerializer,
-                                       FileUploadSerializer)
+    from api.files.serializers import (
+        FileAttachmentSerializer,
+        FileUpdateSerializer,
+        FileUploadSerializer,
+    )
 except ImportError:
     try:
-        from apps.files.serializers import (FileAttachmentSerializer,
-                                            FileUpdateSerializer,
-                                            FileUploadSerializer)
+        from apps.files.serializers import (
+            FileAttachmentSerializer,
+            FileUpdateSerializer,
+            FileUploadSerializer,
+        )
     except ImportError:
         # Создаем заглушки если не найдено
         print("⚠️  Сериализаторы файлов не найдены")

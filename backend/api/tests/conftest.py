@@ -1,4 +1,5 @@
 import pytest
+import logging
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -7,6 +8,26 @@ from apps.projects.models import Project
 from apps.tasks.models import Task
 
 User = get_user_model()
+
+
+def pytest_configure():
+    """Настройка pytest"""
+    # Отключаем логирование WARNING для тестов
+    logging.getLogger().setLevel(logging.ERROR)
+
+    # Или отключаем логирование конкретных логгеров Django
+    logging.getLogger("django.request").setLevel(logging.ERROR)
+    logging.getLogger("django.security").setLevel(logging.ERROR)
+
+
+@pytest.fixture(autouse=True)
+def disable_logging():
+    """Отключает логирование для всех тестов"""
+    import logging
+
+    logging.disable(logging.WARNING)
+    yield
+    logging.disable(logging.NOTSET)
 
 
 @pytest.fixture
