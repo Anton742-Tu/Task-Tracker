@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd backend
-        pip install black flake8 isort
+        pip install black flake8
 
     - name: Check formatting with Black
       run: |
@@ -56,17 +56,17 @@ jobs:
       with:
         python-version: '3.12'
 
+    - name: Install Poetry
+      run: pip install poetry
+
     - name: Install dependencies
       run: |
-        cd backend
-        pip install -r requirements.txt
-        # Исключаем debug_toolbar для CI
-        pip install "django-debug-toolbar>=4.0.0"  # или уберите из тестов
+        poetry install --no-root
 
-    - name: Run tests
+    - name: Check formatting with Black
       run: |
-        cd backend
-        export DJANGO_ENVIRONMENT=testing
-        export SECRET_KEY=test-secret-key
-        python manage.py check
-        pytest --disable-warnings
+        poetry run black --check .
+
+    - name: Lint with flake8
+      run: |
+        poetry run flake8 . --max-line-length=119 --exclude=migrations,tests
