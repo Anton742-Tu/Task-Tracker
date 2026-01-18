@@ -39,11 +39,14 @@ jobs:
 
     - name: Check formatting with Black
       run: |
-        black --check --config pyproject.toml .
+        # Используем конфиг из корня проекта
+        black --check --config ../pyproject.toml .
+        # Или без конфига, с явными параметрами:
+        # black --check --line-length=119 .
 
     - name: Lint with flake8
       run: |
-        flake8 --config .flake8 .
+        flake8 .
 
     - name: Run pre-commit checks
       run: |
