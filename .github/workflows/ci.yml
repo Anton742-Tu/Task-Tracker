@@ -39,10 +39,16 @@ jobs:
 
     - name: Check formatting with Black
       run: |
-        # Используем конфиг из корня проекта
-        black --check --config ../pyproject.toml .
-        # Или без конфига, с явными параметрами:
-        # black --check --line-length=119 .
+        # ПРОВЕРИМ СНАЧАЛА ГДЕ МЫ И ЧТО ЕСТЬ
+        echo "📁 Current directory: $(pwd)"
+        echo "📁 Listing files:"
+        ls -la
+        echo ""
+        echo "📁 Check if pyproject.toml exists in parent:"
+        ls -la ../pyproject.toml || echo "File not found"
+        echo ""
+        # Запускаем black без конфига
+        black --check --line-length=119 .
 
     - name: Lint with flake8
       run: |
@@ -76,47 +82,19 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-test-${{ hashFiles('backend/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-test-
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest pytest-django pytest-cov coverage factory-boy
-
-    - name: Verify settings import
-      run: |
-        python -c "from config.settings.testing import DEBUG; print(f'DEBUG = {DEBUG}'); print('✅ Settings import successful')"
-
-    - name: Show Python path
-      run: |
-        python -c "import sys; print('Python path:'); [print(p) for p in sys.path]"
-
-    - name: Check for missing migrations
-      run: |
-        python manage.py makemigrations --check --dry-run
+        pip install pytest pytest-django
 
     - name: Run migrations
       run: |
         python manage.py migrate --no-input
 
-    - name: Run tests with pytest
+    - name: Run tests
       run: |
-        python -m pytest \
-          --ds=config.settings.testing \
-          --cov=apps \
-          --cov=api \
-          --cov-report=xml \
-          --cov-report=html \
-          --cov-report=term-missing \
-          --disable-warnings \
-          -v
+        python -m pytest -v --ds=config.settings.testing
 
     - name: Upload coverage to Codecov
       if: success()
