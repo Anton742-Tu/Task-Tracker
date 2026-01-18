@@ -13,8 +13,9 @@
       - id: black
         name: black (check only)
         files: ^backend/
-        args: [--check]  # ← ТОЛЬКО ПРОВЕРКА, без изменений
+        args: [ --line-length=119, --check]  # ← ТОЛЬКО ПРОВЕРКА, без изменений
         stages: [commit]
+        language_version: python3.12
 
   - repo: https://github.com/pycqa/flake8
     rev: 6.1.0

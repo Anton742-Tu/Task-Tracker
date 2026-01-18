@@ -1,0 +1,67 @@
+name: Django CI/CD
+
+on: [push, pull_request]
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    env:
+      DJANGO_ENVIRONMENT: testing  # ← Ключевая переменная!
+      SECRET_KEY: test-secret-key-${{ github.run_id }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Display environment info
+      run: |
+        echo "📋 Environment variables:"
+        echo "DJANGO_ENVIRONMENT = $DJANGO_ENVIRONMENT"
+        echo "PYTHON_VERSION = $PYTHON_VERSION"
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest pytest-django
+
+    - name: Check Django settings
+      run: |
+        python -c "
+        import os
+        print('Current DJANGO_ENVIRONMENT:', os.environ.get('DJANGO_ENVIRONMENT'))
+
+        # Проверяем импорт настроек
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+        try:
+            import django
+            django.setup()
+            from django.conf import settings
+            print('✅ Django settings loaded successfully')
+            print(f'DEBUG mode: {settings.DEBUG}')
+            print(f'Database engine: {settings.DATABASES[\"default\"][\"ENGINE\"]}')
+        except Exception as e:
+            print(f'❌ Error loading settings: {e}')
+            import traceback
+            traceback.print_exc()
+        "
+
+    - name: Run migrations
+      run: |
+        python manage.py migrate --no-input
+
+    - name: Run tests with pytest
+      run: |
+        python -m pytest -v --disable-warnings

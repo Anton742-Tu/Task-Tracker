@@ -1,4 +1,3 @@
-# backend/Dockerfile
 # Стадия сборки
 FROM python:3.12-slim as builder
 
