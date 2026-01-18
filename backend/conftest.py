@@ -1,55 +1,52 @@
-﻿import pytest
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
+﻿import os
 
-User = get_user_model()
+import pytest
+
+# Устанавливаем переменную окружения для тестов
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+
+
+def pytest_configure():
+    """Настройка pytest для Django"""
+    import django
+
+    django.setup()
+
+    # Отключаем Debug Toolbar если он есть
+    from django.conf import settings
+
+    if "debug_toolbar" in settings.INSTALLED_APPS:
+        settings.INSTALLED_APPS.remove("debug_toolbar")
+
+    if "debug_toolbar.middleware.DebugToolbarMiddleware" in settings.MIDDLEWARE:
+        settings.MIDDLEWARE.remove("debug_toolbar.middleware.DebugToolbarMiddleware")
+
+
+@pytest.fixture(autouse=True)
+def enable_db_access_for_all_tests(db):
+    """Даем доступ к БД всем тестам"""
+    pass
 
 
 @pytest.fixture
 def api_client():
-    """Фикстура для API клиента."""
+    """Фикстура для API клиента"""
+    from rest_framework.test import APIClient
+
     return APIClient()
 
 
 @pytest.fixture
-def authenticated_api_client():
-    """Фикстура для аутентифицированного API клиента."""
-    client = APIClient()
-    user = User.objects.create_user(
+def authenticated_client(api_client, django_user_model):
+    """Фикстура для аутентифицированного клиента"""
+    user = django_user_model.objects.create_user(
         username="testuser", email="test@example.com", password="testpass123"
     )
-    client.force_authenticate(user=user)
-    return client
 
+    # Получаем токен
+    from rest_framework_simplejwt.tokens import RefreshToken
 
-@pytest.fixture
-def admin_api_client():
-    """Фикстура для API клиента администратора."""
-    client = APIClient()
-    admin_user = User.objects.create_superuser(
-        username="admin", email="admin@example.com", password="adminpass123"
-    )
-    client.force_authenticate(user=admin_user)
-    return client
+    refresh = RefreshToken.for_user(user)
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
-
-@pytest.fixture
-def sample_user():
-    """Фикстура для тестового пользователя."""
-    return User.objects.create_user(
-        username="sampleuser",
-        email="sample@example.com",
-        password="samplepass123",
-        role="employee",
-    )
-
-
-@pytest.fixture
-def sample_manager():
-    """Фикстура для тестового менеджера."""
-    return User.objects.create_user(
-        username="manager",
-        email="manager@example.com",
-        password="managerpass123",
-        role="manager",
-    )
+    return api_client, user

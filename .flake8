@@ -1,28 +1,33 @@
 [flake8]
 max-line-length = 119
-extend-ignore = E203, W503, W504, E501
+extend-ignore =
+    # Django settings star imports
+    F403,
+    F401,
+    F405,
+    # Сложность методов (для тестов нормально)
+    C901,
+    # Слишком длинные строки в миграциях
+    E501,
+
+# Исключаем миграции полностью
 exclude =
     .git,
     __pycache__,
     .venv,
     venv,
     env,
-    migrations,
-    static,
-    media,
+    .env,
     .tox,
-    .pytest_cache,
-    build,
     dist,
-    */node_modules/*,
-    frontend/*/dist,
-    *.min.js,
-    *.min.css
+    build,
+    */migrations/*,
+    *migrations*,
+    migrations,
+
+# Или используем per-file-ignores
 per-file-ignores =
-    __init__.py:F401,
-    tests/*:S101,
-    */migrations/*:F401,
-    */settings/*.py:E501
-ignore =
-    W504,
-    E501
+    # Миграции
+    */migrations/*:E501,C901
+    # Тесты могут быть сложными
+    */tests/*:C901

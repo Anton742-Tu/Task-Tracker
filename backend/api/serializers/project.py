@@ -4,10 +4,9 @@ from apps.projects.models import Project
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели Project."""
-
     creator_name = serializers.CharField(source="creator.get_full_name", read_only=True)
     task_count = serializers.IntegerField(read_only=True)
+    completed_task_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Project
@@ -19,14 +18,9 @@ class ProjectSerializer(serializers.ModelSerializer):
             "creator",
             "creator_name",
             "members",
+            "task_count",
+            "completed_task_count",
             "created_at",
             "updated_at",
-            "task_count",
         ]
-        read_only_fields = ["id", "creator", "created_at", "updated_at", "task_count"]
-
-    def create(self, validated_data):
-        """Создание проекта с текущим пользователем в качестве создателя."""
-        request = self.context.get("request")
-        validated_data["creator"] = request.user
-        return super().create(validated_data)
+        read_only_fields = ["id", "creator", "created_at", "updated_at"]

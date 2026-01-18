@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Главная страница - Task Tracker{% endblock %}
+
+{% block content %}
+    <!-- Герой-секция -->
+    <div class="hero-section">
+        <h1 class="display-4">Добро пожаловать в Task Tracker!</h1>
+        <p class="lead">Мощная система для управления задачами сотрудников</p>
+        <div class="mt-4">
+            <a href="/admin/" class="btn btn-light btn-lg me-3">🔧 Администрирование</a>
+            <a href="/api/" class="btn btn-outline-light btn-lg">📡 API Explorer</a>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <h2 class="mb-4">📊 Обзор системы</h2>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #4361ee, #3a0ca3);">
+                <i class="bi bi-diagram-3-fill" style="font-size: 2rem;"></i>
+                <h3>{{ projects_count|default:"0" }}</h3>
+                <p>Проектов</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #4cc9f0, #4895ef);">
+                <i class="bi bi-list-task" style="font-size: 2rem;"></i>
+                <h3>{{ active_tasks_count|default:"0" }}</h3>
+                <p>Активных задач</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f72585, #b5179e);">
+                <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                <h3>{{ completed_tasks_count|default:"0" }}</h3>
+                <p>Завершено</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #7209b7, #560bad);">
+                <i class="bi bi-people-fill" style="font-size: 2rem;"></i>
+                <h3>{{ users_count|default:"0" }}</h3>
+                <p>Пользователей</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Быстрые ссылки -->
+    <h2 class="mt-5 mb-4">🚀 Быстрый доступ</h2>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">🔧 Админ-панель</h5>
+                    <p class="card-text">Полный контроль над системой, пользователями и проектами</p>
+                    <a href="/admin/" class="btn btn-custom">Открыть</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📡 REST API</h5>
+                    <p class="card-text">Программный доступ ко всем функциям системы через API</p>
+                    <a href="/api/" class="btn btn-custom">Исследовать API</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📖 Документация</h5>
+                    <p class="card-text">Подробная документация API с интерактивными примерами</p>
+                    <a href="/swagger/" class="btn btn-custom">Открыть Swagger</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Техническая информация -->
+    <div class="card mt-5">
+        <div class="card-header">
+            <h5 class="mb-0">🖥️ Техническая информация</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Версия Django:</strong> {{ django_version }}</p>
+                    <p><strong>База данных:</strong> {{ database_info }}</p>
+                    <p><strong>Режим работы:</strong>
+                        {% if debug_mode %}
+                            <span class="badge bg-warning">Разработка</span>
+                        {% else %}
+                            <span class="badge bg-success">Продакшн</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Серверное время:</strong> {{ server_time|date:"d.m.Y H:i:s" }}</p>
+                    <p><strong>Версия Python:</strong> {{ python_version }}</p>
+                    <p><strong>API доступно по:</strong> <code>/api/</code></p>
+                </div>
+            </div>
+            <div class="mt-3">
+                <a href="/diagnostic/" class="btn btn-outline-primary">Подробная диагностика</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Инструкция по началу работы -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">🚀 Начало работы</h5>
+        </div>
+        <div class="card-body">
+            <ol>
+                <li>Создайте суперпользователя через команду: <code>python manage.py createsuperuser</code></li>
+                <li>Войдите в <a href="/admin/">админ-панель</a> и создайте первый проект</li>
+                <li>Добавьте пользователей и назначьте им задачи</li>
+                <li>Используйте API для интеграции с другими системами</li>
+            </ol>
+        </div>
+    </div>
+{% endblock %}

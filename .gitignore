@@ -182,9 +182,9 @@ cython_debug/
 .abstra/
 
 # Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
+#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
+#  and can be added to the global gitignore or merged into this file. However, if you prefer,
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 
@@ -207,3 +207,43 @@ marimo/_lsp/
 __marimo__/
 
 img.png
+img_1.png
+img_2.png
+img_3.png
+
+# Django
+*.pyc
+media/
+
+# Virtual environments
+.venv/
+
+# Environment variables
+.env.local
+.env.production
+.env.development
+.env.testing
+.env.docker
+!.env.example
+!.env.*.example
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Static files
+staticfiles/
+
+# Test media
+test_media/
+
+# Project specific
+logs/
