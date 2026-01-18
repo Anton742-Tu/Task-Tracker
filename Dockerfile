@@ -1,5 +1,5 @@
-# Стадия сборки
-FROM python:3.12-slim as builder
+# Используй FROM и AS с одинаковым регистром
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
@@ -11,22 +11,19 @@ RUN apt-get update && apt-get install -y \
     libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем Poetry
-RUN pip install poetry
+# Копируем backend и зависимости
+COPY backend/requirements.txt .
 
-# Копируем зависимости
-COPY pyproject.toml poetry.lock* ./
-
-# Устанавливаем зависимости (без dev)
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-interaction --no-ansi
+# Устанавливаем зависимости
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Стадия продакшена
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Копируем только нужные библиотеки из builder
+# Копируем зависимости из builder
 COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
@@ -40,8 +37,8 @@ RUN apt-get update && apt-get install -y \
 # Создаем пользователя для безопасности
 RUN groupadd -r django && useradd -r -g django django
 
-# Копируем код
-COPY . .
+# Копируем backend код
+COPY backend/ .
 
 # Меняем владельца файлов
 RUN chown -R django:django /app
