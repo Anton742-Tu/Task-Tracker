@@ -24,4 +24,5 @@ jobs:
 
     - name: Run tests
       run: |
-        python manage.py test
+        $env:DJANGO_ENVIRONMENT='testing'
+        pytest
