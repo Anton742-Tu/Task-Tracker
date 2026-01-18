@@ -50,23 +50,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
 
-    - name: Install Poetry
-      run: pip install poetry
-
-    - name: Install dependencies
+    - name: Format with Black
       run: |
-        poetry install --no-root
-
-    - name: Check formatting with Black
-      run: |
-        poetry run black --check .
+        black . --check --diff
 
     - name: Lint with flake8
       run: |
-        poetry run flake8 . --max-line-length=119 --exclude=migrations,tests
+        flake8 . --max-line-length=119 --exclude=migrations,tests
