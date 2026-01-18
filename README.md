@@ -1,6 +1,7 @@
 # Task Tracker - Система управления задачами сотрудников
 
-![Django](https://img.shields.io/badge/Django-6.0-green)
+![CI/CD](https://github.com/ТВОЙ_USERNAME/task-tracker/actions/workflows/ci.yml/badge.svg)
+![Django](https://img.shields.io/badge/django-5.0-green)
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-orange)
 ![Docker](https://img.shields.io/badge/Docker-✓-lightblue)
