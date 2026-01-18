@@ -9,6 +9,8 @@
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?logo=bootstrap&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-Auth-000000?logo=jsonwebtokens&logoColor=white)
 ![Code Coverage](https://img.shields.io/codecov/c/github/Anton742-Tu/task-tracker?logo=codecov&logoColor=white)
+![Tests](https://img.shields.io/github/actions/workflow/status/Anton742-Tu/task-tracker/ci.yml?branch=main&label=tests&logo=pytest)
+![Files](https://img.shields.io/badge/File_Uploads-✓-success)
 
 Веб-приложение для управления задачами сотрудников в командах и проектах с поддержкой файловых вложений.
 
