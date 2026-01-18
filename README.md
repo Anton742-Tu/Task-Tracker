@@ -1,13 +1,15 @@
 # Task Tracker - Система управления задачами сотрудников
 
-![CI/CD](https://github.com/ТВОЙ_USERNAME/task-tracker/actions/workflows/ci.yml/badge.svg)
-![Django](https://img.shields.io/badge/django-5.0-green)
-![Python](https://img.shields.io/badge/Python-3.12-blue)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-orange)
-![Docker](https://img.shields.io/badge/Docker-✓-lightblue)
-![DRF](https://img.shields.io/badge/Django_REST_Framework-3.14-red)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-purple)
-![JWT](https://img.shields.io/badge/JWT-Authentication-yellow)
+![Django](https://img.shields.io/badge/Django-5.0-092E20?logo=django&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql&logoColor=white)
+![GitHub Actions](https://img.shields.io/github/actions/workflow/status/Anton742-Tu/task-tracker/ci.yml?branch=main&label=CI%2FCD&logo=github-actions&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-✓-2496ED?logo=docker&logoColor=white)
+![DRF](https://img.shields.io/badge/DRF-3.14-800000?logo=django&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?logo=bootstrap&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-Auth-000000?logo=jsonwebtokens&logoColor=white)
+![Code Coverage](https://img.shields.io/codecov/c/github/Anton742-Tu/task-tracker?logo=codecov&logoColor=white)
+![Tests](https://img.shields.io/github/actions/workflow/status/Anton742-Tu/task-tracker/ci.yml?branch=main&label=tests&logo=pytest)
 ![Files](https://img.shields.io/badge/File_Uploads-✓-success)
 
 Веб-приложение для управления задачами сотрудников в командах и проектах с поддержкой файловых вложений.
