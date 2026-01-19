@@ -1,9 +1,0 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h2>Новая задача: {{ task.title }}</h2>
-    <p>Проект: {{ task.project.name }}</p>
-    <p>Срок: {{ task.due_date|date:"d.m.Y"|default:"Не указан" }}</p>
-    <a href="http://localhost:8000/tasks/{{ task.id }}/">Перейти к задаче</a>
-</body>
-</html>
