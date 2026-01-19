@@ -31,6 +31,15 @@ DATABASES = {
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+# Telegram настройки (для теста)
+TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN"  # Получи у @BotFather
+TELEGRAM_CHAT_IDS = {
+    "admin": "123456789",  # chat_id админа
+    "executor": "987654321",  # chat_id исполнителя
+}
+
+SITE_URL = "http://localhost:8000"  # Для ссылок в письмах
+
 # Debug toolbar
 INSTALLED_APPS += [  # type: ignore  # Игнорируем mypy предупреждение
     "debug_toolbar",
@@ -61,8 +70,8 @@ REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = [  # type: ignore
 ]
 
 # Логирование более детальное в разработке
-LOGGING["loggers"]["django"]["level"] = "DEBUG"  # type: ignore
-LOGGING["handlers"]["console"]["level"] = "DEBUG"  # type: ignore
+LOGGING["loggers"]["django"]["level"] = "WARNING"  # type: ignore
+LOGGING["handlers"]["console"]["level"] = "INFO"  # type: ignore
 
 # Выводим информацию о настройках
 print("=" * 50)

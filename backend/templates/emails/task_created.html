@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
+        .task-card { background: white; padding: 15px; border-left: 4px solid #4CAF50; margin: 15px 0; }
+        .btn { display: inline-block; background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+        .footer { margin-top: 20px; text-align: center; color: #666; font-size: 12px; }
+        .priority-high { color: #f44336; font-weight: bold; }
+        .priority-medium { color: #ff9800; font-weight: bold; }
+        .priority-low { color: #4CAF50; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Новая задача</h1>
+        </div>
+
+        <div class="content">
+            <p>Здравствуйте, {{ recipient_name }}!</p>
+            <p>Вам назначена новая задача.</p>
+
+            <div class="task-card">
+                <h2>{{ task.title }}</h2>
+
+                <p><strong>📁 Проект:</strong> {{ project_name }}</p>
+
+                <p><strong>👤 Назначил:</strong>
+                    {{ task.creator.get_full_name|default:task.creator.username }}</p>
+
+                <p><strong>⏰ Срок выполнения:</strong>
+                    {% if task.due_date %}
+                        {{ task.due_date|date:"d.m.Y" }}
+                    {% else %}
+                        Не указан
+                    {% endif %}
+                </p>
+
+                <p><strong>🏷️ Приоритет:</strong>
+                    <span class="priority-{{ task.priority }}">
+                        {{ task.get_priority_display }}
+                    </span>
+                </p>
+
+                <p><strong>📝 Описание:</strong></p>
+                <p>{{ task.description|linebreaks }}</p>
+            </div>
+
+            <div style="text-align: center; margin: 25px 0;">
+                <a href="{{ site_url }}/tasks/{{ task.id }}/" class="btn">
+                    📋 Перейти к задаче
+                </a>
+            </div>
+
+            <p>Для изменения статуса задачи перейдите по ссылке выше.</p>
+        </div>
+
+        <div class="footer">
+            <p>Это автоматическое уведомление от системы Task Tracker.</p>
+            <p>Не отвечайте на это письмо.</p>
+        </div>
+    </div>
+</body>
+</html>

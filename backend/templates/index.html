@@ -13,6 +13,22 @@
         </div>
     </div>
 
+    <!-- Демо-сообщение если нет данных -->
+    {% if show_demo %}
+    <div class="alert alert-info mt-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem;"></i>
+            <div>
+                <h5 class="mb-1">👋 Это демонстрационная статистика!</h5>
+                <p class="mb-0">
+                    В системе пока нет реальных данных.
+                    <a href="/admin/" class="alert-link">Перейдите в админку</a>, чтобы создать проекты и задачи.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Статистика -->
     <h2 class="mb-4">📊 Обзор системы</h2>
     <div class="row">
@@ -78,6 +94,80 @@
         </div>
     </div>
 
+    <!-- Последние проекты -->
+    {% if projects %}
+    <div class="card mt-5">
+        <div class="card-header">
+            <h5 class="mb-0">📁 Последние проекты</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for project in projects %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ project.name }}</h6>
+                            <p class="card-text text-muted small">
+                                {{ project.description|truncatechars:100|default:"Нет описания" }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i> {{ project.creator.get_full_name|default:project.creator.username }}
+                                </small>
+                                <span class="badge bg-primary">
+                                    {{ project.tasks.count }} задач
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Статистика по статусам задач -->
+    {% if not show_demo %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 Распределение задач по статусам</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-primary">{{ todo_count|default:"0" }}</h3>
+                                <p class="mb-0">📋 К выполнению</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-warning">{{ in_progress_count|default:"0" }}</h3>
+                                <p class="mb-0">⚡ В процессе</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-info">{{ review_count|default:"0" }}</h3>
+                                <p class="mb-0">👀 На проверке</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-success">{{ completed_tasks_count|default:"0" }}</h3>
+                                <p class="mb-0">✅ Завершено</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Техническая информация -->
     <div class="card mt-5">
         <div class="card-header">
@@ -92,7 +182,7 @@
                         {% if debug_mode %}
                             <span class="badge bg-warning">Разработка</span>
                         {% else %}
-                            <span class="badge bg-success">Продакшн</span>
+                            <span class="badge bg-success">Продакшен</span>
                         {% endif %}
                     </p>
                 </div>
