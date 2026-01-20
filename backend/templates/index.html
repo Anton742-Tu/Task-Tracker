@@ -13,6 +13,22 @@
         </div>
     </div>
 
+    <!-- Демо-сообщение если нет данных -->
+    {% if show_demo %}
+    <div class="alert alert-info mt-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem;"></i>
+            <div>
+                <h5 class="mb-1">👋 Это демонстрационная статистика!</h5>
+                <p class="mb-0">
+                    В системе пока нет реальных данных.
+                    <a href="/admin/" class="alert-link">Перейдите в админку</a>, чтобы создать проекты и задачи.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Статистика -->
     <h2 class="mb-4">📊 Обзор системы</h2>
     <div class="row">
@@ -76,6 +92,167 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">🔔 Тест уведомлений</h5>
+                    <p class="card-text">Проверка работы email и Telegram уведомлений</p>
+                    <form action="/api/test-notification/" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-custom">
+                            📨 Отправить тест
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Последние проекты -->
+    {% if projects %}
+    <div class="card mt-5">
+        <div class="card-header">
+            <h5 class="mb-0">📁 Последние проекты</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for project in projects %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ project.name }}</h6>
+                            <p class="card-text text-muted small">
+                                {{ project.description|truncatechars:100|default:"Нет описания" }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i> {{ project.creator.get_full_name|default:project.creator.username }}
+                                </small>
+                                <span class="badge bg-primary">
+                                    {{ project.tasks.count }} задач
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Статистика задач (упрощенная) -->
+    <div class="card mt-5">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">📊 Статистика задач</h5>
+        </div>
+        <div class="card-body">
+            <!-- Общая статистика -->
+            <div class="row text-center mb-4">
+                <div class="col-md-3">
+                    <div class="border rounded p-3 bg-light">
+                        <h3 class="text-primary">{{ total_tasks }}</h3>
+                        <p class="mb-0">📋 Всего задач</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 bg-light">
+                        <h3 class="text-success">{{ completed_tasks_count }}</h3>
+                        <p class="mb-0">✅ Выполнено</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 bg-light">
+                        <h3 class="text-warning">{{ active_tasks_count }}</h3>
+                        <p class="mb-0">⚡ Активных</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 bg-light">
+                        <h3 class="text-info">{{ review_count }}</h3>
+                        <p class="mb-0">👀 На проверке</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Прогресс бар (основной) -->
+            {% if total_tasks > 0 %}
+            <div class="mb-4">
+                <h6>📈 Прогресс выполнения:</h6>
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success"
+                         style="width: {% widthratio completed_tasks_count total_tasks 100 %}%">
+                        ✅ Выполнено: {{ completed_tasks_count }}
+                    </div>
+                    <div class="progress-bar bg-info"
+                         style="width: {% widthratio review_count total_tasks 100 %}%">
+                        👀 На проверке: {{ review_count }}
+                    </div>
+                    <div class="progress-bar bg-warning"
+                         style="width: {% widthratio in_progress_count total_tasks 100 %}%">
+                        ⚡ В процессе: {{ in_progress_count }}
+                    </div>
+                    <div class="progress-bar bg-secondary"
+                         style="width: {% widthratio todo_count total_tasks 100 %}%">
+                        📋 К выполнению: {{ todo_count }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Детальная статистика -->
+            <div class="row">
+                <div class="col-md-12">
+                    <h6>📋 Распределение задач:</h6>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center p-3 border rounded">
+                                <div class="me-3">
+                                    <span class="badge bg-secondary fs-5">📋</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-4">{{ todo_count }}</div>
+                                    <div class="text-muted">К выполнению</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center p-3 border rounded">
+                                <div class="me-3">
+                                    <span class="badge bg-warning fs-5">⚡</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-4">{{ in_progress_count }}</div>
+                                    <div class="text-muted">В процессе</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center p-3 border rounded">
+                                <div class="me-3">
+                                    <span class="badge bg-info fs-5">👀</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-4">{{ review_count }}</div>
+                                    <div class="text-muted">На проверке</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center p-3 border rounded">
+                                <div class="me-3">
+                                    <span class="badge bg-success fs-5">✅</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-4">{{ completed_tasks_count }}</div>
+                                    <div class="text-muted">Выполнено</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Техническая информация -->
@@ -92,7 +269,7 @@
                         {% if debug_mode %}
                             <span class="badge bg-warning">Разработка</span>
                         {% else %}
-                            <span class="badge bg-success">Продакшн</span>
+                            <span class="badge bg-success">Продакшен</span>
                         {% endif %}
                     </p>
                 </div>
