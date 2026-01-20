@@ -127,38 +127,112 @@
     </div>
     {% endif %}
 
-    <!-- Статистика по статусам задач -->
-    {% if not show_demo %}
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">📋 Распределение задач по статусам</h5>
+    <!-- Статистика задач (упрощенная) -->
+    <div class="card mt-5">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">📊 Статистика задач</h5>
+        </div>
+        <div class="card-body">
+            <!-- Общая статистика -->
+            <div class="row text-center mb-4">
+                <div class="col-md-3">
+                    <div class="border rounded p-3 bg-light">
+                        <h3 class="text-primary">{{ total_tasks }}</h3>
+                        <p class="mb-0">📋 Всего задач</p>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="row text-center">
+                <div class="col-md-3">
+                    <div class="border rounded p-3 bg-light">
+                        <h3 class="text-success">{{ completed_tasks_count }}</h3>
+                        <p class="mb-0">✅ Выполнено</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 bg-light">
+                        <h3 class="text-warning">{{ active_tasks_count }}</h3>
+                        <p class="mb-0">⚡ Активных</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 bg-light">
+                        <h3 class="text-info">{{ review_count }}</h3>
+                        <p class="mb-0">👀 На проверке</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Прогресс бар (основной) -->
+            {% if total_tasks > 0 %}
+            <div class="mb-4">
+                <h6>📈 Прогресс выполнения:</h6>
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success"
+                         style="width: {% widthratio completed_tasks_count total_tasks 100 %}%">
+                        ✅ Выполнено: {{ completed_tasks_count }}
+                    </div>
+                    <div class="progress-bar bg-info"
+                         style="width: {% widthratio review_count total_tasks 100 %}%">
+                        👀 На проверке: {{ review_count }}
+                    </div>
+                    <div class="progress-bar bg-warning"
+                         style="width: {% widthratio in_progress_count total_tasks 100 %}%">
+                        ⚡ В процессе: {{ in_progress_count }}
+                    </div>
+                    <div class="progress-bar bg-secondary"
+                         style="width: {% widthratio todo_count total_tasks 100 %}%">
+                        📋 К выполнению: {{ todo_count }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Детальная статистика -->
+            <div class="row">
+                <div class="col-md-12">
+                    <h6>📋 Распределение задач:</h6>
+                    <div class="row">
                         <div class="col-md-3">
-                            <div class="border rounded p-3">
-                                <h3 class="text-primary">{{ todo_count|default:"0" }}</h3>
-                                <p class="mb-0">📋 К выполнению</p>
+                            <div class="d-flex align-items-center p-3 border rounded">
+                                <div class="me-3">
+                                    <span class="badge bg-secondary fs-5">📋</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-4">{{ todo_count }}</div>
+                                    <div class="text-muted">К выполнению</div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="border rounded p-3">
-                                <h3 class="text-warning">{{ in_progress_count|default:"0" }}</h3>
-                                <p class="mb-0">⚡ В процессе</p>
+                            <div class="d-flex align-items-center p-3 border rounded">
+                                <div class="me-3">
+                                    <span class="badge bg-warning fs-5">⚡</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-4">{{ in_progress_count }}</div>
+                                    <div class="text-muted">В процессе</div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="border rounded p-3">
-                                <h3 class="text-info">{{ review_count|default:"0" }}</h3>
-                                <p class="mb-0">👀 На проверке</p>
+                            <div class="d-flex align-items-center p-3 border rounded">
+                                <div class="me-3">
+                                    <span class="badge bg-info fs-5">👀</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-4">{{ review_count }}</div>
+                                    <div class="text-muted">На проверке</div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="border rounded p-3">
-                                <h3 class="text-success">{{ completed_tasks_count|default:"0" }}</h3>
-                                <p class="mb-0">✅ Завершено</p>
+                            <div class="d-flex align-items-center p-3 border rounded">
+                                <div class="me-3">
+                                    <span class="badge bg-success fs-5">✅</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-4">{{ completed_tasks_count }}</div>
+                                    <div class="text-muted">Выполнено</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -166,7 +240,6 @@
             </div>
         </div>
     </div>
-    {% endif %}
 
     <!-- Техническая информация -->
     <div class="card mt-5">
