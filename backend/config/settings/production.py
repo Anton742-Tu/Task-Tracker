@@ -72,6 +72,18 @@ if cors_origins:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_origins.split(",") if o.strip()]  # type: ignore
 CORS_ALLOW_CREDENTIALS = True
 
+# Telegram настройки
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+
+# Парсим JSON из переменной TELEGRAM_CHAT_IDS
+telegram_chat_ids_str = os.getenv("TELEGRAM_CHAT_IDS", "{}")
+try:
+    TELEGRAM_CHAT_IDS = json.loads(telegram_chat_ids_str)
+except json.JSONDecodeError:
+    TELEGRAM_CHAT_IDS = {}
+
+SITE_URL = os.getenv("SITE_URL", "")
+
 # Email настройки
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
@@ -118,6 +130,7 @@ print("=" * 50)
 print("🚀 ПРОДАКШЕН: PRODUCTION MODE")
 print(f"🌐 Allowed hosts: {len(ALLOWED_HOSTS)} хостов")
 print(f"📁 Database: {DATABASES['default']['ENGINE']}")
+print(f"🤖 Telegram Bot: {'✅ Настроен' if TELEGRAM_BOT_TOKEN else '❌ Не настроен'}")
 print(f"📧 Email: {EMAIL_HOST}:{EMAIL_PORT}")
 print("=" * 50)
 

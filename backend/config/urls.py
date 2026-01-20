@@ -8,6 +8,7 @@ from django.urls import include, path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
+from api.views import diagnostic, telegram
 
 
 def home_view(request):
@@ -87,9 +88,6 @@ def home_view(request):
                 }
             )
 
-        print(
-            "🎯 home_view контекст: {{'k': v for k, v in context.items() if 'count' in k}}"
-        )
         return render(request, "index.html", context)
 
     except Exception as e:
@@ -171,7 +169,13 @@ schema_view = get_schema_view(
 urlpatterns = [
     # Главная
     path("", home_view, name="home"),
+    # Телеграм webhook
+    path("api/telegram-webhook/", telegram.telegram_webhook, name="telegram_webhook"),
+    path("api/telegram-info/", telegram.get_bot_info, name="telegram_info"),
     # Диагностика
+    path(
+        "api/test-notification/", diagnostic.test_notification, name="test_notification"
+    ),
     path("diagnostic/", diagnostic_view, name="diagnostic"),
     # Health check
     path("health/", health_check, name="health"),

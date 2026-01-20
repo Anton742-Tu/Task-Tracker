@@ -3,11 +3,18 @@
 """
 
 import os
+import json
+from pathlib import Path
+from dotenv import load_dotenv
+
 from .base import *  # Не волнуемся о F403, это нужно для Django
 from .debug_toolbar_settings import DEBUG_TOOLBAR_CONFIG
 
+# Загружаем переменные из .env.development
+load_dotenv(".env.development")
+
 # Debug mode
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
 # Секретный ключ для разработки
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-key-change-in-production")
@@ -31,17 +38,23 @@ DATABASES = {
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# Telegram настройки (для теста)
-TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN"  # Получи у @BotFather
-TELEGRAM_CHAT_IDS = {
-    "admin": "123456789",  # chat_id админа
-    "executor": "987654321",  # chat_id исполнителя
-}
+# Telegram настройки (теперь из .env)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
-SITE_URL = "http://localhost:8000"  # Для ссылок в письмах
+# Парсим JSON из переменной TELEGRAM_CHAT_IDS
+telegram_chat_ids_str = os.getenv("TELEGRAM_CHAT_IDS", "{}")
+try:
+    TELEGRAM_CHAT_IDS = json.loads(telegram_chat_ids_str)
+except json.JSONDecodeError:
+    TELEGRAM_CHAT_IDS = {
+        "admin": os.getenv("TELEGRAM_ADMIN_CHAT_ID", ""),
+        "executor": os.getenv("TELEGRAM_EXECUTOR_CHAT_ID", ""),
+    }
+
+SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
 
 # Debug toolbar
-INSTALLED_APPS += [  # type: ignore  # Игнорируем mypy предупреждение
+INSTALLED_APPS += [  # type: ignore
     "debug_toolbar",
 ]
 
@@ -77,5 +90,7 @@ LOGGING["handlers"]["console"]["level"] = "INFO"  # type: ignore
 print("=" * 50)
 print("🚀 РАЗРАБОТКА: DEBUG MODE ENABLED")
 print(f"📁 Database: {DATABASES['default']['ENGINE']}")
-print(f"🌐 Allowed hosts: {ALLOWED_HOSTS}")
+print(f"🤖 Telegram Bot: {'✅ Настроен' if TELEGRAM_BOT_TOKEN else '❌ Не настроен'}")
+print(f"👤 Telegram Users: {len(TELEGRAM_CHAT_IDS)}")
+print(f"🌐 Site URL: {SITE_URL}")
 print("=" * 50)

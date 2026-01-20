@@ -92,6 +92,20 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">🔔 Тест уведомлений</h5>
+                    <p class="card-text">Проверка работы email и Telegram уведомлений</p>
+                    <form action="/api/test-notification/" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-custom">
+                            📨 Отправить тест
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Последние проекты -->
