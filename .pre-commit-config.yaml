@@ -11,10 +11,12 @@
     rev: 25.12.0  # ТА ЖЕ версия что и локально
     hooks:
       - id: black
+        # Проверять только при push, не при commit
+        stages: [ push ]
         name: black (check only)
         files: ^backend/
-        args: [ --line-length=119, --check]  # ← ТОЛЬКО ПРОВЕРКА, без изменений
-        stages: [commit]
+        args: [ --line-length=119, --check, --diff]  # ← ТОЛЬКО ПРОВЕРКА, без изменений
+
         language_version: python3.12
 
   - repo: https://github.com/pycqa/flake8
