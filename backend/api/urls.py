@@ -12,6 +12,8 @@ from api.views.home import home_view
 from api.views.project import ProjectViewSet
 from api.views.task import TaskViewSet
 from api.views.user import UserViewSet
+from . import views
+from .views import telegram
 
 router = DefaultRouter()
 router.register(r"projects", ProjectViewSet)
@@ -26,6 +28,13 @@ urlpatterns = [
     path("auth/logout/", LogoutView.as_view(), name="logout"),
     path("auth/me/", UserProfileView.as_view(), name="user_profile"),
     path("files/", include("api.files.urls")),
+    path("telegram-webhook/", telegram.telegram_webhook, name="telegram_webhook"),
+    path("telegram-info/", telegram.get_bot_info, name="telegram_info"),
+    path(
+        "test-notification/",
+        views.diagnostic.test_notification,
+        name="test_notification",
+    ),
     # API
     path("", include(router.urls)),
     # Диагностика (публичный доступ)

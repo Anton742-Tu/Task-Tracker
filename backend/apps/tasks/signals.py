@@ -167,18 +167,44 @@ def send_task_email(task, recipient, email_type, project_name, old_status=None):
         print(f"❌ [EMAIL] Ошибка отправки: {e}")
 
 
+def send_telegram_message(chat_id, message):
+    """
+    Универсальная функция отправки сообщений в Telegram
+    Возвращает True при успехе, False при ошибке
+    """
+    if not TELEGRAM_BOT_TOKEN:
+        print("⚠️ [TELEGRAM] Токен бота не настроен")
+        return False
+
+    try:
+        import requests
+
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": chat_id, "text": message, "parse_mode": "HTML"}
+
+        response = requests.post(url, json=payload, timeout=10)
+        response.raise_for_status()
+
+        print(f"✅ [TELEGRAM] Сообщение отправлено в чат {chat_id}")
+        return True
+
+    except Exception as e:
+        print(f"❌ [TELEGRAM] Ошибка отправки: {e}")
+        return False
+
+
+# Обновим старую функцию, чтобы она использовала новую
 def send_telegram_notification(
     chat_id, task, notification_type, project_name, old_status=None
 ):
     """
-    Отправка уведомления в Telegram
+    Отправка уведомления в Telegram о задаче
+    (Совместимость со старым кодом)
     """
     try:
-        import requests
-
         # Формируем текст сообщения
         if notification_type == "new_task_creator":
-            text = f"""🚀 Вы создали новую задачу:
+            text = f"""🚀 <b>Вы создали новую задачу</b>
 
 📌 {task.title}
 👤 Исполнитель: {task.assignee.get_full_name() if task.assignee else 'Не назначен'}
@@ -186,7 +212,7 @@ def send_telegram_notification(
 📅 Срок: {task.due_date.strftime('%d.%m.%Y') if task.due_date else 'Не указан'}"""
 
         elif notification_type == "new_task_assignee":
-            text = f"""🚀 Вам назначена новая задача:
+            text = f"""🚀 <b>Вам назначена новая задача</b>
 
 📌 {task.title}
 👤 От: {task.creator.get_full_name() if task.creator else 'Система'}
@@ -202,32 +228,24 @@ def send_telegram_notification(
                 "completed": "✅",
             }
             emoji = status_emojis.get(task.status, "📝")
-            text = f"""{emoji} Изменен статус задачи:
+            old_status_display = (
+                old_status.replace("_", " ").title() if old_status else ""
+            )
+            new_status_display = task.status.replace("_", " ").title()
+            text = f"""{emoji} <b>Изменен статус задачи</b>
 
 📌 {task.title}
-🔄 {old_status} → {task.status}
+🔄 {old_status_display} → {new_status_display}
 👤 Исполнитель: {task.assignee.get_full_name() if task.assignee else 'Не назначен'}"""
 
         else:
-            return
+            return False
 
-        # URL для отправки
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        return send_telegram_message(chat_id, text)
 
-        # Отправляем
-        response = requests.post(
-            url, json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
-        )
-
-        if response.status_code == 200:
-            print(f"✅ [TELEGRAM] Уведомление отправлено в чат {chat_id}")
-        else:
-            print(f"⚠️ [TELEGRAM] Ошибка: {response.json()}")
-
-    except ImportError:
-        print("⚠️ [TELEGRAM] Библиотека requests не установлена")
     except Exception as e:
-        print(f"❌ [TELEGRAM] Ошибка: {e}")
+        print(f"❌ [TELEGRAM] Ошибка формирования сообщения: {e}")
+        return False
 
 
 # Сигнал для сохранения предыдущего статуса

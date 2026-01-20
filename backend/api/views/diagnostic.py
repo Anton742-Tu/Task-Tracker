@@ -2,6 +2,41 @@ from pathlib import Path
 
 from django.conf import settings
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from apps.tasks.signals import send_telegram_message
+
+
+@csrf_exempt
+def test_notification(request):
+    """Тестовая отправка уведомлений"""
+    if request.method == "POST":
+        telegram_chat_ids = getattr(settings, "TELEGRAM_CHAT_IDS", {})
+
+        results = {}
+        for name, chat_id in telegram_chat_ids.items():
+            success = send_telegram_message(
+                chat_id,
+                f"""🔔 <b>Тестовое уведомление</b>
+
+Система Task Tracker
+Получатель: {name}
+Время: {timezone.now().strftime('%d.%m.%Y %H:%M:%S')}
+Бот: @MyTaskPilotBot
+
+✅ Тестовое сообщение успешно доставлено!""",
+            )
+            results[name] = "✅ Успешно" if success else "❌ Ошибка"
+
+        return JsonResponse(
+            {
+                "status": "ok",
+                "message": "Тестовые уведомления отправлены",
+                "results": results,
+            }
+        )
+
+    return JsonResponse({"error": "Только POST"}, status=400)
 
 
 def diagnostic_view(request):
