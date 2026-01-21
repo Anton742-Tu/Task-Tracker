@@ -71,7 +71,8 @@ module = [
     "dj_database_url.*",
     "sentry_sdk.*",
     "django_redis.*",
-    "django_redis"
+    "django_redis",
+    "apps.users.models",
 ]
 ignore_missing_imports = true
 
