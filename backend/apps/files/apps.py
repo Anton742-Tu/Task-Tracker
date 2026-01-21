@@ -9,6 +9,6 @@ class FilesConfig(AppConfig):
     def ready(self):
         """Импортируем сигналы при загрузке приложения"""
         try:
-            import apps.files.signals  # noqa: F401
+            import apps.files.signals  # type: ignore # noqa: F401
         except ImportError:
             pass

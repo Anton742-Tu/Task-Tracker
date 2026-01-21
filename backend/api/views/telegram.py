@@ -3,7 +3,15 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.conf import settings
-from apps.tasks.signals import send_telegram_message
+from typing import Optional
+
+try:
+    from apps.tasks.signals import send_telegram_message
+
+    HAS_TELEGRAM_FUNCTION = True
+except ImportError:
+    send_telegram_message = None  # type: ignore
+    HAS_TELEGRAM_FUNCTION = False
 
 
 @csrf_exempt
@@ -81,7 +89,7 @@ def telegram_webhook(request):
 Используйте /help для списка доступных команд."""
 
                 # Отправляем ответ пользователю
-                if send_telegram_message:
+                if HAS_TELEGRAM_FUNCTION and send_telegram_message is not None:
                     send_telegram_message(chat_id, response_text)
                 else:
                     print("⚠️ Функция send_telegram_message не найдена")
@@ -89,7 +97,11 @@ def telegram_webhook(request):
                 # Логируем для админа
                 telegram_chat_ids = getattr(settings, "TELEGRAM_CHAT_IDS", {})
                 admin_chat_id = telegram_chat_ids.get("admin")
-                if admin_chat_id and send_telegram_message:
+                if (
+                    admin_chat_id
+                    and HAS_TELEGRAM_FUNCTION
+                    and send_telegram_message is not None
+                ):
                     admin_message = f"""📨 Новое взаимодействие с ботом:
 
 👤 Пользователь: {user_name}

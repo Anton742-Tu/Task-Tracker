@@ -17,22 +17,22 @@ class Task(models.Model):
         HIGH = "high", "Высокий"
         CRITICAL = "critical", "Критический"
 
-    title = models.CharField(max_length=200, verbose_name="Заголовок")
-    description = models.TextField(blank=True, verbose_name="Описание")
+    title = models.CharField(max_length=200, verbose_name="Заголовок")  # type: ignore
+    description = models.TextField(blank=True, verbose_name="Описание")  # type: ignore
     project = models.ForeignKey(
         "projects.Project",
         on_delete=models.CASCADE,
         related_name="tasks",
         verbose_name="Проект",
-    )
+    )  # type: ignore
     creator = models.ForeignKey(
         "users.User",
         on_delete=models.CASCADE,
         related_name="created_tasks",
         verbose_name="Создатель",
-        null=True,  # или False если всегда должен быть
+        null=True,
         blank=True,
-    )
+    )  # type: ignore
     assignee = models.ForeignKey(
         "users.User",
         on_delete=models.SET_NULL,
@@ -40,25 +40,25 @@ class Task(models.Model):
         blank=True,
         related_name="assigned_tasks",
         verbose_name="Исполнитель",
-    )
+    )  # type: ignore
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
         default=Status.TODO,
         verbose_name="Статус",
-    )
+    )  # type: ignore
     priority = models.CharField(
         max_length=20,
         choices=Priority.choices,
         default=Priority.MEDIUM,
         verbose_name="Приоритет",
-    )
-    due_date = models.DateField(null=True, blank=True, verbose_name="Срок выполнения")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
+    )  # type: ignore
+    due_date = models.DateField(null=True, blank=True, verbose_name="Срок выполнения")  # type: ignore
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")  # type: ignore
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")  # type: ignore
 
     @property
-    def is_overdue(self):
+    def is_overdue(self) -> bool:
         """Проверяет, просрочена ли задача."""
         if self.due_date:
             from django.utils import timezone
@@ -71,5 +71,5 @@ class Task(models.Model):
         verbose_name_plural = "Задачи"
         ordering = ["-priority", "-created_at"]
 
-    def __str__(self):
-        return f"{self.title} ({self.get_status_display()})"
+    def __str__(self) -> str:
+        return f"{self.title} ({self.get_status_display()})"  # type: ignore

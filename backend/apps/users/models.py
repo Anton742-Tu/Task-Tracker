@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from typing import Any
 
 
 class User(AbstractUser):
@@ -9,36 +10,41 @@ class User(AbstractUser):
         ("admin", "Администратор"),
     )
 
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="employee")
-    bio = models.TextField(blank=True, null=True)
-    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="employee")  # type: ignore
+    bio = models.TextField(blank=True, null=True)  # type: ignore
+    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)  # type: ignore
     phone = models.CharField(
         max_length=20, blank=True, null=True, verbose_name="Телефон"
-    )
+    )  # type: ignore
     department = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Отдел"
-    )
+    )  # type: ignore
     position = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Должность"
-    )
+    )  # type: ignore
 
-    def __str__(self):
-        return f"{self.username} ({self.get_role_display()})"
+    def __str__(self) -> str:
+        # get_role_display генерируется автоматически Django для полей с choices
+        # Добавляем проверку на случай если метод еще не сгенерирован
+        if hasattr(self, "get_role_display"):
+            role_display = self.get_role_display()
+        else:
+            role_display = self.role
+        return f"{self.username} ({role_display})"
 
     @property
-    def is_manager(self):
+    def is_manager(self) -> bool:
         return self.role in ["manager", "admin"]
 
     @property
-    def is_admin(self):
+    def is_admin(self) -> bool:
         return self.role == "admin"
 
     @property
-    def is_employee(self):
-        # ИСПРАВЛЯЕМ: self.Role.EMPLOYEE не существует
+    def is_employee(self) -> bool:
         return self.role == "employee"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         # Автоматически делаем менеджеров и админов персоналом
         if self.role in ["manager", "admin"]:
             self.is_staff = True
