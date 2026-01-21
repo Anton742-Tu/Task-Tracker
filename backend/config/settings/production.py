@@ -136,7 +136,7 @@ if SENTRY_DSN:
         import sentry_sdk  # type: ignore
         from sentry_sdk.integrations.django import DjangoIntegration  # type: ignore
 
-        sentry_sdk.init(
+        sentry_sdk.init(  # type: ignore
             dsn=SENTRY_DSN,
             integrations=[DjangoIntegration()],
             traces_sample_rate=1.0,
