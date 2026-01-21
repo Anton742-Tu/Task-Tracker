@@ -2,18 +2,11 @@
 Настройки для продакшена
 """
 
+import json
 import os
-from .base import *  # type: ignore
+from typing import Any, Dict, Optional, cast
 
-# Для продакшена нам нужны дополнительные импорты
-try:
-    import dj_database_url
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
-except ImportError:
-    # Если не установлены, это нормально для разработки
-    dj_database_url = None  # type: ignore
-    sentry_sdk = None  # type: ignore
+from .base import *  # type: ignore
 
 # Debug mode
 DEBUG = False
@@ -31,17 +24,36 @@ if not ALLOWED_HOSTS:
 
 # Database
 DATABASE_URL = os.environ.get("DATABASE_URL")
-if DATABASE_URL and dj_database_url:
-    DATABASES = {  # type: ignore
-        "default": dj_database_url.config(
+if DATABASE_URL:
+    try:
+        import dj_database_url  # type: ignore
+
+        # Приведение типа для корректной работы с mypy
+        db_config: Dict[str, Any] = dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
         )
-    }
+        DATABASES = {"default": db_config}
+    except ImportError:
+        # Если не установлен dj_database_url, используем стандартные настройки
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": os.environ.get("DB_NAME", ""),
+                "USER": os.environ.get("DB_USER", ""),
+                "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+                "HOST": os.environ.get("DB_HOST", ""),
+                "PORT": os.environ.get("DB_PORT", "5432"),
+                "CONN_MAX_AGE": 600,
+                "OPTIONS": {
+                    "sslmode": "require",
+                },
+            }
+        }
 else:
     # Используем стандартные переменные окружения
-    DATABASES = {  # type: ignore
+    DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.environ.get("DB_NAME", ""),
@@ -69,7 +81,7 @@ SECURE_REFERRER_POLICY = "same-origin"
 # CORS только для доверенных источников
 cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
 if cors_origins:
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_origins.split(",") if o.strip()]  # type: ignore
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_origins.split(",") if o.strip()]
 CORS_ALLOW_CREDENTIALS = True
 
 # Telegram настройки
@@ -77,9 +89,13 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 # Парсим JSON из переменной TELEGRAM_CHAT_IDS
 telegram_chat_ids_str = os.getenv("TELEGRAM_CHAT_IDS", "{}")
+TELEGRAM_CHAT_IDS: Dict[str, str] = {}
 try:
-    TELEGRAM_CHAT_IDS = json.loads(telegram_chat_ids_str)
-except json.JSONDecodeError:
+    parsed_ids = json.loads(telegram_chat_ids_str)
+    if isinstance(parsed_ids, dict):
+        # Убедимся, что все значения - строки
+        TELEGRAM_CHAT_IDS = {str(k): str(v) for k, v in parsed_ids.items()}
+except (json.JSONDecodeError, TypeError):
     TELEGRAM_CHAT_IDS = {}
 
 SITE_URL = os.getenv("SITE_URL", "")
@@ -94,36 +110,56 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 # Кэширование (используем Redis если доступен)
+# Cache - типизированная версия
 REDIS_URL = os.environ.get("REDIS_URL")
 if REDIS_URL:
-    CACHES = {  # type: ignore
+    cache_config: Dict[str, Any] = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
             "LOCATION": REDIS_URL,
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "parser_class": "redis.connection.HiredisParser",
+                "socket_keepalive": True,
+                "retry_on_timeout": True,
             },
         }
     }
-
-    # Сессии в Redis
+    CACHES = cache_config
     SESSION_ENGINE = "django.contrib.sessions.backends.cache"
     SESSION_CACHE_ALIAS = "default"
 
 # Sentry мониторинг ошибок
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
-if SENTRY_DSN and sentry_sdk:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[DjangoIntegration()],
-        traces_sample_rate=1.0,
-        send_default_pii=True,
-        environment="production",
-    )
+if SENTRY_DSN:
+    try:
+        import sentry_sdk  # type: ignore
+        from sentry_sdk.integrations.django import DjangoIntegration  # type: ignore
 
-# Логирование в файл
-LOGGING["handlers"]["file"]["level"] = "ERROR"  # type: ignore
-LOGGING["loggers"]["django"]["handlers"] = ["console", "file"]  # type: ignore
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[DjangoIntegration()],
+            traces_sample_rate=1.0,
+            send_default_pii=True,
+            environment="production",
+        )
+    except ImportError:
+        # sentry_sdk не установлен
+        pass
+
+# Логирование в файл (с проверкой существования LOGGING)
+# Приводим LOGGING к правильному типу
+logging_config: Dict[str, Any] = (
+    cast(Dict[str, Any], LOGGING)
+    if "LOGGING" in locals() or "LOGGING" in globals()
+    else {}
+)
+
+if logging_config:
+    if "handlers" in logging_config and "file" in logging_config["handlers"]:
+        logging_config["handlers"]["file"]["level"] = "ERROR"
+    if "loggers" in logging_config and "django" in logging_config["loggers"]:
+        logging_config["loggers"]["django"]["handlers"] = ["console", "file"]
 
 # Выводим информацию (без секретов)
 print("=" * 50)
