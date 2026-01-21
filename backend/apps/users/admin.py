@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from typing import cast, List, Tuple
 from django.utils.translation import gettext_lazy as _
 
 from .models import User
@@ -11,12 +10,15 @@ class CustomUserAdmin(UserAdmin):
     list_display = ("username", "email", "first_name", "last_name", "role", "is_staff")
     list_filter = ("role", "is_staff", "is_superuser")
 
-    # Приводим UserAdmin.fieldsets к списку
-    fieldsets = cast(List[Tuple], UserAdmin.fieldsets) + [
-        (_("Дополнительная информация"), {"fields": ("role", "bio", "avatar")}),
+    # ignore для mypy ошибок с типами
+    fieldsets = list(UserAdmin.fieldsets) + [  # type: ignore
+        (
+            _("Дополнительная информация"),
+            {"fields": ("role", "bio", "avatar", "phone", "department", "position")},
+        ),
     ]
 
-    add_fieldsets = cast(List[Tuple], UserAdmin.add_fieldsets) + [
+    add_fieldsets = list(UserAdmin.add_fieldsets) + [  # type: ignore
         (_("Дополнительная информация"), {"fields": ("role",)}),
     ]
 
