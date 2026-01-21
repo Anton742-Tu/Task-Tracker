@@ -1,0 +1,1 @@
+DjangoIntegration: type
