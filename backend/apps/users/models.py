@@ -31,7 +31,7 @@ class User(AbstractUser):
         null=True,
         verbose_name="Telegram Username",
         help_text="@username в Telegram",
-    )
+    )  # type: ignore
 
     telegram_chat_id = models.CharField(
         max_length=50,
@@ -40,17 +40,17 @@ class User(AbstractUser):
         unique=True,
         verbose_name="Telegram Chat ID",
         help_text="ID чата в Telegram для уведомлений",
-    )
+    )  # type: ignore
 
     telegram_notifications = models.BooleanField(
         default=True,
         verbose_name="Telegram уведомления",
         help_text="Включить уведомления в Telegram",
-    )
+    )  # type: ignore
 
     telegram_linked_at = models.DateTimeField(
         blank=True, null=True, verbose_name="Дата привязки Telegram"
-    )
+    )  # type: ignore
 
     def __str__(self) -> str:
         # get_role_display генерируется автоматически Django для полей с choices

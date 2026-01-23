@@ -7,20 +7,36 @@ from .models import User
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ("username", "email", "first_name", "last_name", "role", "is_staff")
-    list_filter = ("role", "is_staff", "is_superuser")
+    list_display = ("username", "email", "first_name", "last_name", "role", "is_staff", "has_telegram")
+    list_filter = ("role", "is_staff", "is_superuser", "telegram_notifications")
 
-    # ignore для mypy ошибок с типами
-    fieldsets = list(UserAdmin.fieldsets) + [  # type: ignore
-        (
-            _("Дополнительная информация"),
-            {"fields": ("role", "bio", "avatar", "phone", "department", "position")},
-        ),
-    ]
+    # Полное переопределение
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        (_('Personal info'), {'fields': ('first_name', 'last_name', 'email')}),
+        (_('Permissions'), {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+        }),
+        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+        (_('Дополнительная информация'), {
+            'fields': ('role', 'bio', 'avatar', 'phone', 'department', 'position')
+        }),
+        (_('Telegram настройки'), {
+            'fields': ('telegram_username', 'telegram_chat_id', 'telegram_notifications', 'telegram_linked_at'),
+            'classes': ('collapse',)  # Сворачиваемый раздел
+        }),
+    )
 
-    add_fieldsets = list(UserAdmin.add_fieldsets) + [  # type: ignore
-        (_("Дополнительная информация"), {"fields": ("role",)}),
-    ]
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2', 'email'),
+        }),
+        (_('Дополнительная информация'), {
+            'classes': ('wide',),
+            'fields': ('role',),
+        }),
+    )
 
     def get_queryset(self, request):
         """Менеджеры видят всех пользователей, но не могут редактировать админов"""
@@ -42,22 +58,45 @@ class CustomUserAdmin(UserAdmin):
         """Менеджеры не могут удалять пользователей"""
         return False
 
-    actions = ["export_telegram_ids", "import_telegram_ids"]
+    # Добавляем кастомные методы
+    def has_telegram(self, obj):
+        """Проверяет, привязан ли Telegram"""
+        return bool(obj.telegram_chat_id)
 
-    def export_telegram_ids(self, request, queryset):
-        """Экспорт chat_id в CSV"""
-        import csv
-        from django.http import HttpResponse
+    has_telegram.boolean = True  # type: ignore
+    has_telegram.short_description = "Telegram"  # type: ignore
 
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = 'attachment; filename="telegram_ids.csv"'
+    def get_telegram_info(self, obj):
+        """Информация о Telegram"""
+        if obj.telegram_chat_id:
+            info = f"ID: {obj.telegram_chat_id}"
+            if obj.telegram_username:
+                info += f" (@{obj.telegram_username})"
+            if not obj.telegram_notifications:
+                info += " 🔕"
+            return info
+        return "—"
 
-        writer = csv.writer(response)
-        writer.writerow(["username", "email", "telegram_chat_id"])
+    get_telegram_info.short_description = "Telegram информация"  # type: ignore
 
-        for user in queryset:
-            writer.writerow([user.username, user.email, user.telegram_chat_id or ""])
 
-        return response
+# Если нужно, добавьте действия для админки
+def enable_telegram_notifications(modeladmin, request, queryset):
+    """Включить Telegram уведомления для выбранных пользователей"""
+    queryset.update(telegram_notifications=True)
+    modeladmin.message_user(request, f"Уведомления включены для {queryset.count()} пользователей")
 
-    export_telegram_ids.short_description = "Экспорт Telegram ID"
+
+enable_telegram_notifications.short_description = "Включить Telegram уведомления"  # type: ignore
+
+
+def disable_telegram_notifications(modeladmin, request, queryset):
+    """Выключить Telegram уведомления для выбранных пользователей"""
+    queryset.update(telegram_notifications=False)
+    modeladmin.message_user(request, f"Уведомления выключены для {queryset.count()} пользователей")
+
+
+disable_telegram_notifications.short_description = "Выключить Telegram уведомления"  # type: ignore
+
+# Добавляем действия к админке
+CustomUserAdmin.actions = [enable_telegram_notifications, disable_telegram_notifications]
