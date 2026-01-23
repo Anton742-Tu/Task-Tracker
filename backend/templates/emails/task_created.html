@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #4CAF50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .task-info { background: white; padding: 15px; border-left: 4px solid #4CAF50; margin: 15px 0; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        .button { background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Новая задача</h1>
+        </div>
+
+        <div class="content">
+            <p>Здравствуйте, {{ recipient_name }}!</p>
+
+            <div class="task-info">
+                <h2>{{ task.title }}</h2>
+                <p><strong>Проект:</strong> {{ project_name }}</p>
+                <p><strong>Приоритет:</strong> {{ task.get_priority_display }}</p>
+                <p><strong>Срок выполнения:</strong> {{ task.due_date|date:"d.m.Y"|default:"Не указан" }}</p>
+                <p><strong>Статус:</strong> {{ task.get_status_display }}</p>
+
+                {% if task.description %}
+                <p><strong>Описание:</strong></p>
+                <p>{{ task.description|linebreaks }}</p>
+                {% endif %}
+            </div>
+
+            <p style="text-align: center;">
+                <a href="{{ site_url }}/tasks/{{ task.id }}/" class="button">
+                    Открыть задачу
+                </a>
+            </p>
+
+            <p>Для просмотра всех ваших задач перейдите в <a href="{{ site_url }}/tasks/">раздел задач</a>.</p>
+        </div>
+
+        <div class="footer">
+            <p>Это автоматическое уведомление от системы Task Tracker.</p>
+            <p>Если вы получили это письмо по ошибке, пожалуйста, свяжитесь с администратором.</p>
+        </div>
+    </div>
+</body>
+</html>

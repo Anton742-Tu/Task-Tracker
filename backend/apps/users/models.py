@@ -22,6 +22,13 @@ class User(AbstractUser):
     position = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Должность"
     )  # type: ignore
+    telegram_chat_id = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Telegram Chat ID",
+        help_text="ID чата в Telegram для уведомлений",
+    )
 
     def __str__(self) -> str:
         # get_role_display генерируется автоматически Django для полей с choices

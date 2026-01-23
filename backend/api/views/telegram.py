@@ -6,7 +6,7 @@ from django.conf import settings
 from typing import Optional
 
 try:
-    from apps.tasks.signals import send_telegram_message
+    from apps.tasks.telegram_utils import send_telegram_message
 
     HAS_TELEGRAM_FUNCTION = True
 except ImportError:
