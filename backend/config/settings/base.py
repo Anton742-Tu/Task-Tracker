@@ -276,7 +276,12 @@ CACHES = {
     }
 }
 
-# Session
+LOGIN_URL = "/employee/login/"
+LOGIN_REDIRECT_URL = "/dashboard/"  # Для сотрудников
+LOGOUT_REDIRECT_URL = "/"
+
+# Настройки сессии
+SESSION_SAVE_EVERY_REQUEST = True
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 SESSION_COOKIE_AGE = 1209600  # 2 недели
 

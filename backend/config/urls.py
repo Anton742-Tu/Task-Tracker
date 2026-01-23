@@ -15,6 +15,8 @@ from api.views import diagnostic, telegram
 from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 from apps.users.views import employee_dashboard, employee_profile
+from django.contrib.auth.views import LoginView, LogoutView
+from django.shortcuts import redirect
 
 
 def home_view(request):
@@ -175,26 +177,51 @@ schema_view = get_schema_view(
 urlpatterns = [
     # Отдельный вход для сотрудников
     path(
-        "login/employee/",
-        auth_views.LoginView.as_view(
+        "admin/login/",
+        LoginView.as_view(
+            template_name="admin/login.html",
+            redirect_authenticated_user=True,
+            next_page="/admin/",  # Админы идут в админку
+        ),
+        name="admin_login",
+    ),
+    path(
+        "employee/login/",
+        LoginView.as_view(
             template_name="registration/employee_login.html",
             redirect_authenticated_user=True,
-            next_page="/dashboard/",
+            next_page="/dashboard/",  # Сотрудники идут в дашборд
         ),
         name="employee_login",
     ),
-    # ОСТАВЬТЕ ТОЛЬКО ОДИН из этих путей:
-    # Либо этот:
-    path("", RedirectView.as_view(pattern_name="employee_dashboard")),
-    # Либо этот:
-    # path("", home_view, name="home"),
+    # Общий выход
+    path(
+        "logout/",
+        LogoutView.as_view(next_page="/"),
+        name="logout",
+    ),
+    # Главная страница - перенаправляем по роли
+    path(
+        "",
+        lambda request: (
+            redirect(
+                "/admin/"
+                if request.user.is_authenticated
+                and (request.user.is_superuser or request.user.is_staff)
+                else "/dashboard/"
+            )
+            if request.user.is_authenticated
+            else home_view
+        ),
+        name="home",
+    ),
+    path("", home_view, name="home"),
     # Уберите дублирование include:
-    # path("users/", include("apps.users.urls")),  # если нужно /users/dashboard/
-    # path("", include("apps.users.urls")),  # если нужно /dashboard/
+    path("", include("apps.users.urls")),
     # Телеграм webhook
     path("api/telegram-webhook/", telegram.telegram_webhook, name="telegram_webhook"),
     path("api/telegram-info/", telegram.get_bot_info, name="telegram_info"),
-    # Для сотрудников (если не используете include)
+    # Для сотрудников
     path("dashboard/", employee_dashboard, name="employee_dashboard"),
     path("profile/", employee_profile, name="employee_profile"),
     # Диагностика

@@ -95,6 +95,44 @@ class CustomUserAdmin(UserAdmin):
         ),
     )
 
+    def get_form(self, request, obj=None, **kwargs):
+        """Переопределяем форму для редактирования своего профиля"""
+        form = super().get_form(request, obj, **kwargs)
+
+        # Если пользователь редактирует СЕБЯ
+        if obj == request.user:
+            # Разрешаем редактирование всех полей для себя
+            for field_name in form.base_fields:
+                if field_name not in ["password", "is_superuser"]:
+                    form.base_fields[field_name].disabled = False
+
+            # Особенно важно разрешить email
+            if "email" in form.base_fields:
+                form.base_fields["email"].disabled = False
+                form.base_fields["email"].required = True
+
+        return form
+
+    def has_change_permission(self, request, obj=None):
+        """Всегда разрешаем редактировать себя"""
+        if obj and obj == request.user:
+            return True
+        return super().has_change_permission(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        """Сохраняем модель с учетом того, что админ редактирует себя"""
+        # Если это сам пользователь
+        if obj == request.user:
+            # Проверяем, что email уникален (кроме себя)
+            if User.objects.filter(email=obj.email).exclude(id=obj.id).exists():
+                from django.core.exceptions import ValidationError
+
+                raise ValidationError(
+                    "Этот email уже используется другим пользователем"
+                )
+
+        super().save_model(request, obj, form, change)
+
     def get_queryset(self, request):
         """Менеджеры видят всех пользователей, но не могут редактировать админов"""
         qs = super().get_queryset(request)
@@ -102,14 +140,6 @@ class CustomUserAdmin(UserAdmin):
             return qs
         # Менеджеры видят всех, кроме суперпользователей
         return qs.filter(is_superuser=False)
-
-    def has_change_permission(self, request, obj=None):
-        """Менеджеры не могут менять других менеджеров и админов"""
-        if obj and obj.is_superuser:
-            return False
-        if obj and obj.role == "manager" and obj != request.user:
-            return False
-        return super().has_change_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
         """Проверка прав на удаление"""

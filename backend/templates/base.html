@@ -91,6 +91,33 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- В navbar добавьте условие: -->
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        {% if user.is_superuser %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/admin/">🔧 Админка</a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/dashboard/">📊 Мой дашборд</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/profile/">👤 Профиль</a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/logout/">🚪 Выйти ({{ user.username }})</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/employee/login/">🔐 Вход для сотрудников</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/login/">⚙️ Вход для админов</a>
+                        </li>
+                    {% endif %}
+                </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link active" href="/">🏠 Главная</a>
