@@ -15,6 +15,8 @@ from drf_yasg import openapi  # type: ignore
 from drf_yasg.views import get_schema_view  # type: ignore
 from rest_framework import permissions
 from api.views import diagnostic, telegram
+from django.contrib.auth.views import LogoutView
+from django.contrib.auth import logout as auth_logout
 
 
 def home_view(request):
@@ -137,6 +139,13 @@ def health_check(request):
     return HttpResponse("OK")
 
 
+def force_logout(request):
+    """Принудительный выход из системы"""
+    auth_logout(request)
+    request.session.flush()  # Полностью очищаем сессию
+    return redirect("/")
+
+
 # Swagger/OpenAPI
 schema_view = get_schema_view(
     openapi.Info(
@@ -175,9 +184,9 @@ urlpatterns = [
     # Выходы
     path(
         "logout/",
-        auth_views.LogoutView.as_view(
-            template_name="registration/logged_out.html",
-            next_page=None,
+        LogoutView.as_view(
+            template_name="logout_button.html",  # Наш новый шаблон
+            next_page="/",
         ),
         name="logout",
     ),
@@ -206,6 +215,7 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    path("force-logout/", force_logout, name="force_logout"),
 ]
 
 # Debug toolbar
