@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Дашборд сотрудника - Task Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Приветствие -->
+    <div class="alert alert-info">
+        <h4>👋 Добро пожаловать, {{ user.get_full_name|default:user.username }}!</h4>
+        <p class="mb-0">Вы вошли как сотрудник. Ваш email: {{ user.email }}</p>
+        <a href="/profile/" class="btn btn-sm btn-outline-info mt-2">📝 Редактировать профиль</a>
+    </div>
+
+    <!-- Карточки статистики -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Всего задач</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ tasks.count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-header">Активные</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ active_tasks.count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Выполнено</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ completed_tasks.count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">Просрочено</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ overdue_tasks.count }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div class="mb-4">
+        <a href="#" class="btn btn-success">➕ Создать задачу</a>
+        <a href="#" class="btn btn-outline-secondary">📊 Отчеты</a>
+        <a href="/profile/" class="btn btn-outline-primary">👤 Мой профиль</a>
+        <a href="/admin/logout/" class="btn btn-outline-danger float-end">🚪 Выйти</a>
+    </div>
+
+    <!-- Таблица задач -->
+    <h3>📋 Мои задачи</h3>
+    {% if tasks %}
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Задача</th>
+                <th>Проект</th>
+                <th>Статус</th>
+                <th>Приоритет</th>
+                <th>Срок</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>
+                    <strong>{{ task.title }}</strong>
+                    {% if task.description %}
+                    <br><small class="text-muted">{{ task.description|truncatechars:50 }}</small>
+                    {% endif %}
+                </td>
+                <td>{{ task.project.name|default:"Без проекта" }}</td>
+                <td>
+                    <span class="badge bg-{% if task.status == 'done' %}success{% elif task.status == 'in_progress' %}warning{% elif task.status == 'review' %}info{% else %}secondary{% endif %}">
+                        {{ task.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    {% if task.priority == 'high' %}
+                    <span class="badge bg-danger">Высокий</span>
+                    {% elif task.priority == 'medium' %}
+                    <span class="badge bg-warning">Средний</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Низкий</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if task.due_date %}
+                        {{ task.due_date|date:"d.m.Y" }}
+                        {% if task.is_overdue %}
+                        <br><small class="text-danger">Просрочено!</small>
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="#" class="btn btn-sm btn-info">👁️ Просмотр</a>
+                    <a href="#" class="btn btn-sm btn-warning">✏️ Изменить</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning">
+        📭 У вас пока нет назначенных задач. Обратитесь к администратору.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

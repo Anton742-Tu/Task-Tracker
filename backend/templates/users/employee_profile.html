@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Мой профиль - Task Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>👤 Мой профиль</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Имя</label>
+                                <input type="text" name="first_name"
+                                       value="{{ user.first_name }}"
+                                       class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Фамилия</label>
+                                <input type="text" name="last_name"
+                                       value="{{ user.last_name }}"
+                                       class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" name="email"
+                                   value="{{ user.email }}"
+                                   class="form-control" required>
+                            <div class="form-text">На этот email будут приходить уведомления</div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label class="form-label">Текущий пароль <span class="text-danger">*</span></label>
+                            <input type="password" name="current_password"
+                                   class="form-control" required>
+                            <div class="form-text">Для подтверждения изменений</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Новый пароль</label>
+                            <input type="password" name="new_password"
+                                   class="form-control">
+                            <div class="form-text">Оставьте пустым, если не хотите менять</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                💾 Сохранить изменения
+                            </button>
+                            <a href="/dashboard/" class="btn btn-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5>ℹ️ Информация</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Имя пользователя:</strong><br>{{ user.username }}</p>
+                    <p><strong>Роль:</strong><br>{{ user.get_role_display }}</p>
+                    <p><strong>Дата регистрации:</strong><br>
+                        {{ user.date_joined|date:"d.m.Y" }}</p>
+                    <p><strong>Последний вход:</strong><br>
+                        {{ user.last_login|date:"d.m.Y H:i"|default:"-" }}</p>
+
+                    {% if user.telegram_chat_id %}
+                    <div class="alert alert-success mt-3">
+                        <strong>✅ Telegram привязан</strong>
+                        {% if user.telegram_username %}
+                        <p class="mb-0">@{{ user.telegram_username }}</p>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mt-3">
+                        <strong>⚠️ Telegram не привязан</strong>
+                        <p class="mb-0">Вы не получаете уведомления в Telegram</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

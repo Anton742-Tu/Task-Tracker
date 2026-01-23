@@ -5,22 +5,133 @@ from django.utils.translation import gettext_lazy as _
 from .models import User
 
 
+def enable_telegram_notifications(modeladmin, request, queryset):
+    """Включить Telegram уведомления для выбранных пользователей"""
+    queryset.update(telegram_notifications=True)
+    modeladmin.message_user(
+        request, f"Уведомления включены для {queryset.count()} пользователей"
+    )
+
+
+enable_telegram_notifications.short_description = "Включить Telegram уведомления"  # type: ignore
+
+
+def disable_telegram_notifications(modeladmin, request, queryset):
+    """Выключить Telegram уведомления для выбранных пользователей"""
+    queryset.update(telegram_notifications=False)
+    modeladmin.message_user(
+        request, f"Уведомления выключены для {queryset.count()} пользователей"
+    )
+
+
+disable_telegram_notifications.short_description = "Выключить Telegram уведомления"  # type: ignore
+
+
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ("username", "email", "first_name", "last_name", "role", "is_staff")
-    list_filter = ("role", "is_staff", "is_superuser")
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "role",
+        "is_staff",
+        "has_telegram",
+    )
+    list_filter = ("role", "is_staff", "is_superuser", "telegram_notifications")
 
-    # ignore для mypy ошибок с типами
-    fieldsets = list(UserAdmin.fieldsets) + [  # type: ignore
+    # Добавляем действия ДО объявления класса или внутри него
+    actions = [enable_telegram_notifications, disable_telegram_notifications]
+
+    # Полное переопределение
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
         (
             _("Дополнительная информация"),
             {"fields": ("role", "bio", "avatar", "phone", "department", "position")},
         ),
-    ]
+        (
+            _("Telegram настройки"),
+            {
+                "fields": (
+                    "telegram_username",
+                    "telegram_chat_id",
+                    "telegram_notifications",
+                    "telegram_linked_at",
+                ),
+                "classes": ("collapse",),  # Сворачиваемый раздел
+            },
+        ),
+    )
 
-    add_fieldsets = list(UserAdmin.add_fieldsets) + [  # type: ignore
-        (_("Дополнительная информация"), {"fields": ("role",)}),
-    ]
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "password1", "password2", "email"),
+            },
+        ),
+        (
+            _("Дополнительная информация"),
+            {
+                "classes": ("wide",),
+                "fields": ("role",),
+            },
+        ),
+    )
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Переопределяем форму для редактирования своего профиля"""
+        form = super().get_form(request, obj, **kwargs)
+
+        # Если пользователь редактирует СЕБЯ
+        if obj == request.user:
+            # Разрешаем редактирование всех полей для себя
+            for field_name in form.base_fields:
+                if field_name not in ["password", "is_superuser"]:
+                    form.base_fields[field_name].disabled = False
+
+            # Особенно важно разрешить email
+            if "email" in form.base_fields:
+                form.base_fields["email"].disabled = False
+                form.base_fields["email"].required = True
+
+        return form
+
+    def has_change_permission(self, request, obj=None):
+        """Всегда разрешаем редактировать себя"""
+        if obj and obj == request.user:
+            return True
+        return super().has_change_permission(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        """Сохраняем модель с учетом того, что админ редактирует себя"""
+        # Если это сам пользователь
+        if obj == request.user:
+            # Проверяем, что email уникален (кроме себя)
+            if User.objects.filter(email=obj.email).exclude(id=obj.id).exists():
+                from django.core.exceptions import ValidationError
+
+                raise ValidationError(
+                    "Этот email уже используется другим пользователем"
+                )
+
+        super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         """Менеджеры видят всех пользователей, но не могут редактировать админов"""
@@ -30,14 +141,70 @@ class CustomUserAdmin(UserAdmin):
         # Менеджеры видят всех, кроме суперпользователей
         return qs.filter(is_superuser=False)
 
-    def has_change_permission(self, request, obj=None):
-        """Менеджеры не могут менять других менеджеров и админов"""
-        if obj and obj.is_superuser:
-            return False
-        if obj and obj.role == "manager" and obj != request.user:
-            return False
-        return super().has_change_permission(request, obj)
-
     def has_delete_permission(self, request, obj=None):
-        """Менеджеры не могут удалять пользователей"""
+        """Проверка прав на удаление"""
+        # Админы могут удалять всех
+        if request.user.is_superuser:
+            return True
+
+        # Менеджеры не могут удалять пользователей
+        if request.user.role == "manager":
+            return False
+
+        # Сотрудники не могут удалять (но они и не должны видеть админку)
         return False
+
+    # Добавляем кастомные методы
+    def has_telegram(self, obj):
+        """Проверяет, привязан ли Telegram"""
+        return bool(obj.telegram_chat_id)
+
+    has_telegram.boolean = True  # type: ignore
+    has_telegram.short_description = "Telegram"  # type: ignore
+
+    def get_telegram_info(self, obj):
+        """Информация о Telegram"""
+        if obj.telegram_chat_id:
+            info = f"ID: {obj.telegram_chat_id}"
+            if obj.telegram_username:
+                info += f" (@{obj.telegram_username})"
+            if not obj.telegram_notifications:
+                info += " 🔕"
+            return info
+        return "—"
+
+    get_telegram_info.short_description = "Telegram информация"  # type: ignore
+
+    def delete_model(self, request, obj):
+        """Кастомное удаление пользователя"""
+        # Дополнительная логика перед удалением
+        print(f"🗑️ Удаление пользователя {obj.username}")
+
+        # Можно отправить уведомление
+        if hasattr(obj, "telegram_chat_id") and obj.telegram_chat_id:
+            from apps.tasks.telegram_utils import send_telegram_message
+
+            message = """👋 Ваш аккаунт в Task Tracker был удален администратором.
+
+Если это ошибка, свяжитесь с администратором системы."""
+            send_telegram_message(obj.telegram_chat_id, message)
+
+        # Вызываем стандартное удаление
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        """Массовое удаление пользователей"""
+        for user in queryset:
+            # Логика для каждого пользователя
+            print(f"🗑️ Массовое удаление: {user.username}")
+
+            # Уведомления в Telegram
+            if hasattr(user, "telegram_chat_id") and user.telegram_chat_id:
+                from apps.tasks.telegram_utils import send_telegram_message
+
+                message = """👋 Ваш аккаунт в Task Tracker был удален.
+
+Если это ошибка, свяжитесь с администратором."""
+                send_telegram_message(user.telegram_chat_id, message)
+
+        super().delete_queryset(request, queryset)

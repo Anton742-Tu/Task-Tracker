@@ -92,23 +92,62 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <!-- Единая навигация для ВСЕХ -->
                     <li class="nav-item">
-                        <a class="nav-link active" href="/">🏠 Главная</a>
+                        <a class="nav-link" href="/">🏠 Главная</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/">🔧 Админка</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/api/">📡 API</a>
-                    </li>
-                    <li class="nav-link">|</li>
+
+                    {% if user.is_authenticated %}
+                        {% if user.is_superuser or user.is_staff %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/admin/">🔧 Админка</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/api/">📡 API</a>
+                            </li>
+                            <li class="nav-item">
+                                <form method="post" action="/logout/" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="nav-link btn btn-link" style="border: none; background: none; color: inherit;">
+                                        🚪 Выйти ({{ user.username }})
+                                    </button>
+                                </form>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/dashboard/">📊 Дашборд</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/profile/">👤 Профиль</a>
+                            </li>
+                            <li class="nav-item">
+                                <form method="post" action="/logout/" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="nav-link btn btn-link" style="border: none; background: none; color: inherit;">
+                                        🚪 Выйти ({{ user.username }})
+                                    </button>
+                                </form>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/employee/login/">🔐 Вход для сотрудников</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/login/">⚙️ Вход для админов</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/api/">📡 API</a>
+                        </li>
+                    {% endif %}
+
+                    <!-- Общие ссылки (всегда видны) -->
                     <li class="nav-item">
                         <a class="nav-link" href="/swagger/">📖 Swagger</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/redoc/">📚 ReDoc</a>
                     </li>
-                    <li class="nav-link">|</li>
                     <li class="nav-item">
                         <a class="nav-link" href="/diagnostic/">🛠️ Диагностика</a>
                     </li>
@@ -116,7 +155,6 @@
             </div>
         </div>
     </nav>
-
     <!-- Основной контент -->
     <div class="container">
         {% block content %}
