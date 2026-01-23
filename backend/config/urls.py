@@ -183,16 +183,18 @@ urlpatterns = [
         ),
         name="employee_login",
     ),
-    # Главная страница перенаправляет в зависимости от роли
+    # ОСТАВЬТЕ ТОЛЬКО ОДИН из этих путей:
+    # Либо этот:
     path("", RedirectView.as_view(pattern_name="employee_dashboard")),
-    path("users/", include("apps.users.urls")),  # Все пути пользователей
-    path("", include("apps.users.urls")),  # Корневые пути
-    # Главная
-    path("", home_view, name="home"),
+    # Либо этот:
+    # path("", home_view, name="home"),
+    # Уберите дублирование include:
+    # path("users/", include("apps.users.urls")),  # если нужно /users/dashboard/
+    # path("", include("apps.users.urls")),  # если нужно /dashboard/
     # Телеграм webhook
     path("api/telegram-webhook/", telegram.telegram_webhook, name="telegram_webhook"),
     path("api/telegram-info/", telegram.get_bot_info, name="telegram_info"),
-    # Для сотрудников
+    # Для сотрудников (если не используете include)
     path("dashboard/", employee_dashboard, name="employee_dashboard"),
     path("profile/", employee_profile, name="employee_profile"),
     # Диагностика
