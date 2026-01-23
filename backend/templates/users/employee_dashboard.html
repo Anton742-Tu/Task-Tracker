@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>👋 Привет, {{ user.get_full_name|default:user.username }}!</h1>
+
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Всего задач</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ tasks.count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-header">Активные</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ active_tasks.count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Выполнено</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ completed_tasks.count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">Просрочено</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ overdue_tasks.count }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Мои задачи</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Задача</th>
+                <th>Проект</th>
+                <th>Статус</th>
+                <th>Срок</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{{ task.project.name|default:"-" }}</td>
+                <td>
+                    <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'in_progress' %}warning{% else %}info{% endif %}">
+                        {{ task.get_status_display }}
+                    </span>
+                </td>
+                <td>{{ task.due_date|date:"d.m.Y"|default:"-" }}</td>
+                <td>
+                    <a href="#" class="btn btn-sm btn-info">Просмотр</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">Нет назначенных задач</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -112,7 +112,16 @@ class CustomUserAdmin(UserAdmin):
         return super().has_change_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
-        """Менеджеры не могут удалять пользователей"""
+        """Проверка прав на удаление"""
+        # Админы могут удалять всех
+        if request.user.is_superuser:
+            return True
+
+        # Менеджеры не могут удалять пользователей
+        if request.user.role == "manager":
+            return False
+
+        # Сотрудники не могут удалять (но они и не должны видеть админку)
         return False
 
     # Добавляем кастомные методы
@@ -135,3 +144,37 @@ class CustomUserAdmin(UserAdmin):
         return "—"
 
     get_telegram_info.short_description = "Telegram информация"  # type: ignore
+
+    def delete_model(self, request, obj):
+        """Кастомное удаление пользователя"""
+        # Дополнительная логика перед удалением
+        print(f"🗑️ Удаление пользователя {obj.username}")
+
+        # Можно отправить уведомление
+        if hasattr(obj, "telegram_chat_id") and obj.telegram_chat_id:
+            from apps.tasks.telegram_utils import send_telegram_message
+
+            message = """👋 Ваш аккаунт в Task Tracker был удален администратором.
+
+Если это ошибка, свяжитесь с администратором системы."""
+            send_telegram_message(obj.telegram_chat_id, message)
+
+        # Вызываем стандартное удаление
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        """Массовое удаление пользователей"""
+        for user in queryset:
+            # Логика для каждого пользователя
+            print(f"🗑️ Массовое удаление: {user.username}")
+
+            # Уведомления в Telegram
+            if hasattr(user, "telegram_chat_id") and user.telegram_chat_id:
+                from apps.tasks.telegram_utils import send_telegram_message
+
+                message = """👋 Ваш аккаунт в Task Tracker был удален.
+
+Если это ошибка, свяжитесь с администратором."""
+                send_telegram_message(user.telegram_chat_id, message)
+
+        super().delete_queryset(request, queryset)

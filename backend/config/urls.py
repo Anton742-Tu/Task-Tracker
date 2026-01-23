@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from pathlib import Path
 
 from django.conf import settings
@@ -5,10 +6,15 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpResponse, JsonResponse
 from django.urls import include, path
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
+
+# type: ignore - библиотеки без stub-файлов
+from drf_yasg import openapi  # type: ignore
+from drf_yasg.views import get_schema_view  # type: ignore
 from rest_framework import permissions
 from api.views import diagnostic, telegram
+from django.contrib.auth import views as auth_views
+from django.views.generic import RedirectView
+from apps.users.views import employee_dashboard, employee_profile
 
 
 def home_view(request):
@@ -167,11 +173,28 @@ schema_view = get_schema_view(
 
 # 3. Основные URL patterns
 urlpatterns = [
+    # Отдельный вход для сотрудников
+    path(
+        "login/employee/",
+        auth_views.LoginView.as_view(
+            template_name="registration/employee_login.html",
+            redirect_authenticated_user=True,
+            next_page="/dashboard/",
+        ),
+        name="employee_login",
+    ),
+    # Главная страница перенаправляет в зависимости от роли
+    path("", RedirectView.as_view(pattern_name="employee_dashboard")),
+    path("users/", include("apps.users.urls")),  # Все пути пользователей
+    path("", include("apps.users.urls")),  # Корневые пути
     # Главная
     path("", home_view, name="home"),
     # Телеграм webhook
     path("api/telegram-webhook/", telegram.telegram_webhook, name="telegram_webhook"),
     path("api/telegram-info/", telegram.get_bot_info, name="telegram_info"),
+    # Для сотрудников
+    path("dashboard/", employee_dashboard, name="employee_dashboard"),
+    path("profile/", employee_profile, name="employee_profile"),
     # Диагностика
     path(
         "api/test-notification/", diagnostic.test_notification, name="test_notification"
@@ -192,10 +215,10 @@ urlpatterns = [
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
 
-# 4. Debug toolbar
+# 4. Debug toolbar - только для разработки
 if settings.DEBUG:
     try:
-        import debug_toolbar
+        import debug_toolbar  # type: ignore
 
         urlpatterns = [
             path("__debug__/", include(debug_toolbar.urls)),
