@@ -41,3 +41,23 @@ class CustomUserAdmin(UserAdmin):
     def has_delete_permission(self, request, obj=None):
         """Менеджеры не могут удалять пользователей"""
         return False
+
+    actions = ["export_telegram_ids", "import_telegram_ids"]
+
+    def export_telegram_ids(self, request, queryset):
+        """Экспорт chat_id в CSV"""
+        import csv
+        from django.http import HttpResponse
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="telegram_ids.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(["username", "email", "telegram_chat_id"])
+
+        for user in queryset:
+            writer.writerow([user.username, user.email, user.telegram_chat_id or ""])
+
+        return response
+
+    export_telegram_ids.short_description = "Экспорт Telegram ID"

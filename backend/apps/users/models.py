@@ -16,18 +16,40 @@ class User(AbstractUser):
     phone = models.CharField(
         max_length=20, blank=True, null=True, verbose_name="Телефон"
     )  # type: ignore
+
     department = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Отдел"
     )  # type: ignore
+
     position = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Должность"
     )  # type: ignore
+
+    telegram_username = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Telegram Username",
+        help_text="@username в Telegram",
+    )
+
     telegram_chat_id = models.CharField(
         max_length=50,
         blank=True,
         null=True,
+        unique=True,
         verbose_name="Telegram Chat ID",
         help_text="ID чата в Telegram для уведомлений",
+    )
+
+    telegram_notifications = models.BooleanField(
+        default=True,
+        verbose_name="Telegram уведомления",
+        help_text="Включить уведомления в Telegram",
+    )
+
+    telegram_linked_at = models.DateTimeField(
+        blank=True, null=True, verbose_name="Дата привязки Telegram"
     )
 
     def __str__(self) -> str:
