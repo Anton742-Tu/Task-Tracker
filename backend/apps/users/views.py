@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
 from django.http import HttpResponseForbidden
+from django.contrib.auth import logout as auth_logout
 
 
 def employee_required(view_func):
@@ -108,3 +109,12 @@ def employee_profile(request):
         return redirect("employee_profile")
 
     return render(request, "users/employee_profile.html", {"user": request.user})
+
+
+@login_required
+def custom_logout(request):
+    """Кастомный выход из системы для надежности"""
+    auth_logout(request)
+    # Очищаем сессию полностью
+    request.session.flush()
+    return redirect("/")

@@ -81,7 +81,7 @@
     </style>
 </head>
 <body>
-    <!-- Навигация -->
+    # Навигация
     <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #4361ee, #3a0ca3);">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">
@@ -91,24 +91,34 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- В navbar добавьте условие: -->
                 <ul class="navbar-nav ms-auto">
+                    <!-- Единая навигация для ВСЕХ -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">🏠 Главная</a>
+                    </li>
+
                     {% if user.is_authenticated %}
-                        {% if user.is_superuser %}
+                        {% if user.is_superuser or user.is_staff %}
                             <li class="nav-item">
                                 <a class="nav-link" href="/admin/">🔧 Админка</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/api/">📡 API</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/logout/">🚪 Выйти ({{ user.username }})</a>
+                            </li>
                         {% else %}
                             <li class="nav-item">
-                                <a class="nav-link" href="/dashboard/">📊 Мой дашборд</a>
+                                <a class="nav-link" href="/dashboard/">📊 Дашборд</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="/profile/">👤 Профиль</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/logout/">🚪 Выйти ({{ user.username }})</a>
+                            </li>
                         {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="/admin/logout/">🚪 Выйти ({{ user.username }})</a>
-                        </li>
                     {% else %}
                         <li class="nav-item">
                             <a class="nav-link" href="/employee/login/">🔐 Вход для сотрудников</a>
@@ -116,26 +126,18 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/admin/login/">⚙️ Вход для админов</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/api/">📡 API</a>
+                        </li>
                     {% endif %}
-                </ul>
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/">🏠 Главная</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/">🔧 Админка</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/api/">📡 API</a>
-                    </li>
-                    <li class="nav-link">|</li>
+
+                    <!-- Общие ссылки (всегда видны) -->
                     <li class="nav-item">
                         <a class="nav-link" href="/swagger/">📖 Swagger</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/redoc/">📚 ReDoc</a>
                     </li>
-                    <li class="nav-link">|</li>
                     <li class="nav-item">
                         <a class="nav-link" href="/diagnostic/">🛠️ Диагностика</a>
                     </li>
@@ -143,7 +145,6 @@
             </div>
         </div>
     </nav>
-
     <!-- Основной контент -->
     <div class="container">
         {% block content %}
