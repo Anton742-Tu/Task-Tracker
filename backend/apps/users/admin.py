@@ -5,37 +5,94 @@ from django.utils.translation import gettext_lazy as _
 from .models import User
 
 
+def enable_telegram_notifications(modeladmin, request, queryset):
+    """Включить Telegram уведомления для выбранных пользователей"""
+    queryset.update(telegram_notifications=True)
+    modeladmin.message_user(
+        request, f"Уведомления включены для {queryset.count()} пользователей"
+    )
+
+
+enable_telegram_notifications.short_description = "Включить Telegram уведомления"  # type: ignore
+
+
+def disable_telegram_notifications(modeladmin, request, queryset):
+    """Выключить Telegram уведомления для выбранных пользователей"""
+    queryset.update(telegram_notifications=False)
+    modeladmin.message_user(
+        request, f"Уведомления выключены для {queryset.count()} пользователей"
+    )
+
+
+disable_telegram_notifications.short_description = "Выключить Telegram уведомления"  # type: ignore
+
+
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ("username", "email", "first_name", "last_name", "role", "is_staff", "has_telegram")
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "role",
+        "is_staff",
+        "has_telegram",
+    )
     list_filter = ("role", "is_staff", "is_superuser", "telegram_notifications")
+
+    # Добавляем действия ДО объявления класса или внутри него
+    actions = [enable_telegram_notifications, disable_telegram_notifications]
 
     # Полное переопределение
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        (_('Personal info'), {'fields': ('first_name', 'last_name', 'email')}),
-        (_('Permissions'), {
-            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
-        }),
-        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
-        (_('Дополнительная информация'), {
-            'fields': ('role', 'bio', 'avatar', 'phone', 'department', 'position')
-        }),
-        (_('Telegram настройки'), {
-            'fields': ('telegram_username', 'telegram_chat_id', 'telegram_notifications', 'telegram_linked_at'),
-            'classes': ('collapse',)  # Сворачиваемый раздел
-        }),
+        (None, {"fields": ("username", "password")}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
+        (
+            _("Дополнительная информация"),
+            {"fields": ("role", "bio", "avatar", "phone", "department", "position")},
+        ),
+        (
+            _("Telegram настройки"),
+            {
+                "fields": (
+                    "telegram_username",
+                    "telegram_chat_id",
+                    "telegram_notifications",
+                    "telegram_linked_at",
+                ),
+                "classes": ("collapse",),  # Сворачиваемый раздел
+            },
+        ),
     )
 
     add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'email'),
-        }),
-        (_('Дополнительная информация'), {
-            'classes': ('wide',),
-            'fields': ('role',),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "password1", "password2", "email"),
+            },
+        ),
+        (
+            _("Дополнительная информация"),
+            {
+                "classes": ("wide",),
+                "fields": ("role",),
+            },
+        ),
     )
 
     def get_queryset(self, request):
@@ -78,25 +135,3 @@ class CustomUserAdmin(UserAdmin):
         return "—"
 
     get_telegram_info.short_description = "Telegram информация"  # type: ignore
-
-
-# Если нужно, добавьте действия для админки
-def enable_telegram_notifications(modeladmin, request, queryset):
-    """Включить Telegram уведомления для выбранных пользователей"""
-    queryset.update(telegram_notifications=True)
-    modeladmin.message_user(request, f"Уведомления включены для {queryset.count()} пользователей")
-
-
-enable_telegram_notifications.short_description = "Включить Telegram уведомления"  # type: ignore
-
-
-def disable_telegram_notifications(modeladmin, request, queryset):
-    """Выключить Telegram уведомления для выбранных пользователей"""
-    queryset.update(telegram_notifications=False)
-    modeladmin.message_user(request, f"Уведомления выключены для {queryset.count()} пользователей")
-
-
-disable_telegram_notifications.short_description = "Выключить Telegram уведомления"  # type: ignore
-
-# Добавляем действия к админке
-CustomUserAdmin.actions = [enable_telegram_notifications, disable_telegram_notifications]
