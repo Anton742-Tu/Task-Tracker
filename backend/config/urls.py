@@ -1,5 +1,6 @@
 # mypy: ignore-errors
 from pathlib import Path
+from datetime import timezone
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -96,15 +97,59 @@ def home_view(request):
         return HttpResponse(html)
 
 
+def force_to_site(request):
+    """Принудительный переход на сайт"""
+    request.session["force_site"] = True
+    return redirect("/")
+
+
+def force_to_admin(request):
+    """Принудительный переход в админку"""
+    if "force_site" in request.session:
+        del request.session["force_site"]
+    return redirect("/admin/")
+
+
 def smart_home_redirect(request):
     """Умный редирект на главной странице"""
+    # Если пользователь только что вышел
+    if request.GET.get("just_logged_out") == "true":
+        return home_view(request)
+
+    # Проверяем специальный параметр из админки
+    from_admin = request.GET.get("from_admin") == "true"
+
+    # Если пришли по кнопке из админки - показываем сайт
+    if from_admin:
+        request.session["show_site_for_admin"] = True
+        return home_view(request)
+
+    # Проверяем флаг в сессии
+    if request.session.get("show_site_for_admin"):
+        return home_view(request)
+
     if request.user.is_authenticated:
+        # Если пользователь явно хочет в админку
+        if request.GET.get("to_admin") == "true":
+            if "show_site_for_admin" in request.session:
+                del request.session["show_site_for_admin"]
+            return redirect("/admin/")
+
+        # По умолчанию админы идут в админку
         if request.user.is_superuser or request.user.is_staff:
             return redirect("/admin/")
         else:
             return redirect("/dashboard/")
     else:
         return home_view(request)
+
+
+def go_to_site_from_admin(request):
+    """Явный переход из админки на сайт"""
+    request.session["show_site_for_admin"] = True
+    # Добавляем timestamp для уникальности
+    request.session["site_redirect_time"] = str(timezone.now())
+    return redirect("/?timestamp=" + str(timezone.now().timestamp()))
 
 
 def diagnostic_view(request):
@@ -185,11 +230,12 @@ urlpatterns = [
     path(
         "logout/",
         LogoutView.as_view(
-            template_name="logout_button.html",  # Наш новый шаблон
+            template_name="logout_button.html",
             next_page="/",
         ),
         name="logout",
     ),
+    path("logout/", custom_logout, name="logout"),
     path("logout/alt/", custom_logout, name="custom_logout"),
     # Сотрудники
     path("dashboard/", employee_dashboard, name="employee_dashboard"),
@@ -206,6 +252,8 @@ urlpatterns = [
     path("health/", health_check, name="health"),
     # Админка
     path("admin/", admin.site.urls),
+    path("force-to-site/", force_to_site, name="force_to_site"),
+    path("force-to-admin/", force_to_admin, name="force_to_admin"),
     # API
     path("api/", include("api.urls")),
     # Документация
@@ -214,6 +262,7 @@ urlpatterns = [
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
+    path("tasks/", include("apps.tasks.urls")),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     path("force-logout/", force_logout, name="force_logout"),
 ]
