@@ -1,3 +1,4 @@
+import logging
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -10,6 +11,8 @@ from .models import Task
 from apps.projects.models import Project
 from apps.users.models import User
 from django.db import models
+
+logger = logging.getLogger(__name__)
 
 
 def admin_required(view_func):
@@ -518,3 +521,54 @@ def task_statistics(request):
     except Exception as e:
         messages.error(request, f"❌ Ошибка загрузки статистики: {str(e)}")
         return redirect("/dashboard/")
+
+
+@login_required
+@require_POST
+def complete_task(request, task_id):
+    """Быстрое завершение задачи сотрудником"""
+    try:
+        task = get_object_or_404(Task, id=task_id)
+
+        # Проверяем права
+        if not (request.user.is_superuser or task.assignee == request.user):
+            messages.error(request, "❌ У вас нет прав для завершения этой задачи")
+            return redirect('tasks:task_list')
+
+        # Проверяем, можно ли завершить
+        if task.status == Task.Status.DONE:
+            messages.info(request, "✅ Задача уже выполнена")
+            return redirect('tasks:task_list')
+
+        # Меняем статус (убрали ненужную переменную old_status)
+        task.status = Task.Status.DONE
+        task.save()
+
+        # Логируем (добавили импорт logger или создаем локально)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"✅ Пользователь {request.user.username} завершил задачу {task.id}")
+
+        # Отправляем уведомление (если сигналы настроены)
+        try:
+            from .signals import task_notification_system
+            task_notification_system(Task, task, created=False, kwargs={})
+        except Exception as e:  # Исправили голый except
+            logger.warning(f"⚠️ Не удалось отправить уведомление: {e}")
+
+        messages.success(request, f"✅ Задача '{task.title}' выполнена!")
+
+        # Редирект обратно
+        next_url = request.POST.get('next', 'tasks:task_list')
+        if next_url == 'tasks:my_tasks':
+            return redirect('tasks:my_tasks')
+        elif next_url == 'tasks:task_detail':
+            return redirect('tasks:task_detail', task_id=task.id)
+        elif next_url == 'employee_dashboard':
+            return redirect('employee_dashboard')
+        else:
+            return redirect('tasks:task_list')
+
+    except Exception as e:
+        messages.error(request, f"❌ Ошибка: {str(e)}")
+        return redirect('tasks:task_list')

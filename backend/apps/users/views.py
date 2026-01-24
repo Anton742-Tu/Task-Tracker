@@ -32,8 +32,7 @@ def employee_dashboard(request):
 
     user = request.user
 
-    # Получаем задачи сотрудника (используем правильные статусы)
-    # Статусы обычно: 'todo', 'in_progress', 'review', 'done'
+    # Получаем задачи сотрудника
     tasks = Task.objects.filter(assignee=user).order_by("-created_at")
 
     # Правильные фильтры (адаптируйте под ваши статусы)
