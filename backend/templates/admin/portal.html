@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Админ портал - Task Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">⚙️ Административный портал</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div style="font-size: 4rem;">👨‍💼</div>
+                        <h3>Добро пожаловать, {{ user.get_full_name|default:user.username }}!</h3>
+                        <p class="text-muted">Вы вошли как администратор системы</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center">
+                                    <div class="mb-3" style="font-size: 2.5rem;">🔧</div>
+                                    <h5>Админ-панель</h5>
+                                    <p class="text-muted">Полное управление системой</p>
+                                    <a href="/admin/" class="btn btn-primary w-100">
+                                        Открыть админку
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center">
+                                    <div class="mb-3" style="font-size: 2.5rem;">🌐</div>
+                                    <h5>Сайт</h5>
+                                    <p class="text-muted">Основная часть системы</p>
+                                    <a href="/?admin_mode=true" class="btn btn-success w-100">
+                                        Перейти на сайт
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <div class="mb-3" style="font-size: 2.5rem;">➕</div>
+                                    <h5>Создать задачу</h5>
+                                    <p class="text-muted">Быстрое создание новой задачи</p>
+                                    <a href="/tasks/create/" class="btn btn-warning w-100">
+                                        Создать задачу
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <div class="mb-3" style="font-size: 2.5rem;">📊</div>
+                                    <h5>Дашборд</h5>
+                                    <p class="text-muted">Просмотр всех задач системы</p>
+                                    <a href="/dashboard/" class="btn btn-info w-100">
+                                        Открыть дашборд
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <form method="post" action="/logout/" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger">
+                                🚪 Выйти из системы
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Выход</title>
+    <style>
+        .logout-container {
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-primary {
+            background: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="logout-container">
+        <h2>🚪 Выход из системы</h2>
+        <p>Вы уверены, что хотите выйти?</p>
+
+        <!-- Форма с CSRF -->
+        <form method="post" action="/logout/">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                ✅ Да, выйти
+            </button>
+        </form>
+
+        <!-- Альтернативные способы -->
+        <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+            <p>Если обычный выход не работает:</p>
+            <a href="/simple-logout/" class="btn btn-primary">
+                🚀 Быстрый выход (без CSRF)
+            </a>
+            <br>
+            <a href="/force-logout/" class="btn btn-danger" style="margin-top: 10px;">
+                ⚡ Принудительный выход
+            </a>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <a href="/">🏠 На главную</a> |
+            <a href="/debug-session/">🔧 Диагностика сессии</a>
+        </div>
+    </div>
+</body>
+</html>

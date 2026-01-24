@@ -1,0 +1,67 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Task Tracker Admin{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Стиль для кнопки перехода на сайт */
+    .site-header-link {
+        background: #4CAF50;
+        color: white !important;
+        padding: 8px 15px;
+        border-radius: 4px;
+        margin-left: 20px;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: 500;
+        transition: all 0.2s;
+        border: 1px solid #45a049;
+    }
+
+    .site-header-link:hover {
+        background: #45a049;
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Стили для правой части (только нужные ссылки) */
+    #user-tools {
+        font-weight: 500;
+    }
+
+    /* Скрываем все лишние ссылки в правой части */
+    #user-tools a:not([href*="password_change"]):not([href*="logout"]) {
+        display: none !important;
+    }
+
+    /* Стиль для имени пользователя */
+    .user-welcome {
+        color: #fff;
+        margin-right: 15px;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        🔧 Task Tracker Admin
+    </a>
+    <a href="/?from_admin=true" class="site-header-link">
+        🌐 Перейти на сайт
+    </a>
+</h1>
+{% endblock %}
+
+{% block userlinks %}
+
+    {% if user.has_usable_password %}
+    <a href="{% url 'admin:password_change' %}">Изменить пароль</a>
+    <!-- Нет слэша и ссылки на выход -->
+    {% endif %}
+{% endblock %}

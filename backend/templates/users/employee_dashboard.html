@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load task_tags %}
+
+{% block title %}Дашборд сотрудника - Task Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Приветствие -->
+    <div class="alert alert-info">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1">👋 Добро пожаловать, {{ user.get_full_name|default:user.username }}!</h4>
+                <p class="mb-0">Вы вошли как сотрудник. Email: {{ user.email }}</p>
+                {% if user.telegram_chat_id %}
+                <small class="text-success">✅ Telegram уведомления подключены</small>
+                {% else %}
+                <small class="text-warning">⚠️ Telegram уведомления не настроены</small>
+                {% endif %}
+            </div>
+            <div>
+                <a href="{% url 'employee_profile' %}" class="btn btn-outline-info">
+                    📝 Редактировать профиль
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">🚀 Быстрые действия</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'tasks:my_tasks' %}" class="btn btn-primary">
+                            📋 Мои задачи ({{ active_tasks.count }} активных)
+                        </a>
+                        <a href="#" class="btn btn-outline-danger"
+                           onclick="alert('Чтобы сообщить об ошибке, обратитесь к администратору'); return false;">
+                            🐞 Сообщить об ошибке
+                        </a>
+                        <a href="#" class="btn btn-outline-warning"
+                           onclick="alert('Чтобы предложить улучшение, обратитесь к администратору'); return false;">
+                            💡 Предложить улучшение
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary"
+                           onclick="alert('Для создания личных задач обратитесь к администратору'); return false;">
+                            📝 Личная задача
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Карточки статистики -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Всего задач</span>
+                    <span class="badge bg-light text-dark">{{ tasks.count }}</span>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="card-title">{{ tasks.count }}</h2>
+                    <p class="card-text">Назначено на вас</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>В работе</span>
+                    <span class="badge bg-light text-dark">{{ active_tasks.count }}</span>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="card-title">{{ active_tasks.count }}</h2>
+                    <p class="card-text">Требуют внимания</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Выполнено</span>
+                    <span class="badge bg-light text-dark">{{ completed_tasks.count }}</span>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="card-title">{{ completed_tasks.count }}</h2>
+                    <p class="card-text">Успешно завершено</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Просрочено</span>
+                    <span class="badge bg-light text-dark">{{ overdue_tasks.count }}</span>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="card-title">{{ overdue_tasks.count }}</h2>
+                    <p class="card-text">Требуют срочного внимания</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика по статусам -->
+    {% if status_stats %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Распределение задач по статусам</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        {% for status, count in status_stats.items %}
+                        <div class="col-md-2 col-4 mb-3">
+                            <div class="border rounded p-3">
+                                <h3 class="mb-1">{{ count }}</h3>
+                                <small class="text-muted">
+                                    {% if status == 'todo' %}📋 К выполнению
+                                    {% elif status == 'in_progress' %}⚡ В работе
+                                    {% elif status == 'review' %}👀 На проверке
+                                    {% elif status == 'done' %}✅ Выполнено
+                                    {% elif status == 'blocked' %}🚫 Заблокировано
+                                    {% else %}{{ status|title }}{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Активные задачи (срочные/просроченные) -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">🔥 Срочные задачи (требуют внимания)</h5>
+        </div>
+        <div class="card-body">
+            {% if overdue_tasks or active_tasks %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-warning">
+                        <tr>
+                            <th width="30%">Задача</th>
+                            <th>Проект</th>
+                            <th>Статус</th>
+                            <th>Срок</th>
+                            <th width="20%">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in overdue_tasks|slice:":5" %}
+                        <tr class="table-danger">
+                            <td>
+                                <strong class="text-danger">🚨 {{ task.title }}</strong>
+                                {% if task.description %}
+                                <br><small class="text-muted">{{ task.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ task.project.name|default:"Без проекта" }}</td>
+                            <td>
+                                <span class="badge bg-danger">
+                                    {{ task.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="text-danger">
+                                <strong>{{ task.due_date|date:"d.m.Y" }}</strong>
+                                <br><small>Просрочено!</small>
+                            </td>
+                            <td>
+                                {% if task|can_complete_task:user and task.status != 'done' %}
+                                <form method="post"
+                                      action="{% url 'tasks:complete_task' task.id %}"
+                                      class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="employee_dashboard">
+                                    <button type="submit"
+                                            class="btn btn-success btn-sm"
+                                            onclick="return confirm('Отметить задачу как выполненную?')">
+                                        ✅ Выполнено
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <a href="{% url 'tasks:task_detail' task.id %}"
+                                   class="btn btn-info btn-sm">
+                                    Подробнее
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        {% for task in active_tasks|slice:":5" %}
+                        {% if not task.is_overdue %}
+                        <tr>
+                            <td>
+                                <strong>{{ task.title }}</strong>
+                                {% if task.description %}
+                                <br><small class="text-muted">{{ task.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ task.project.name|default:"Без проекта" }}</td>
+                            <td>
+                                <span class="badge bg-warning">
+                                    {{ task.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if task.due_date %}
+                                    {{ task.due_date|date:"d.m.Y" }}
+                                    {% if task.due_date == today %}
+                                    <br><small class="text-warning">Сегодня!</small>
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task|can_complete_task:user and task.status != 'done' %}
+                                <form method="post"
+                                      action="{% url 'tasks:complete_task' task.id %}"
+                                      class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="employee_dashboard">
+                                    <button type="submit"
+                                            class="btn btn-success btn-sm"
+                                            onclick="return confirm('Отметить задачу как выполненную?')">
+                                        ✅ Выполнено
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <a href="{% url 'tasks:task_detail' task.id %}"
+                                   class="btn btn-info btn-sm">
+                                    Подробнее
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if overdue_tasks.count > 5 or active_tasks.count > 5 %}
+            <div class="text-center mt-3">
+                <a href="{% url 'tasks:my_tasks' %}" class="btn btn-outline-primary">
+                    📋 Показать все задачи ({{ tasks.count }})
+                </a>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-4">
+                <h4>🎉 Все задачи выполнены!</h4>
+                <p class="text-muted">У вас нет активных или просроченных задач.</p>
+                <a href="{% url 'tasks:my_tasks' %}" class="btn btn-outline-success">
+                    📋 Посмотреть выполненные задачи
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Последние выполненные задачи -->
+    {% if completed_tasks %}
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">✅ Последние выполненные задачи</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for task in completed_tasks|slice:":6" %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-success">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ task.title }}</h6>
+                            <p class="card-text small text-muted">
+                                {{ task.description|truncatechars:80|default:"Описание отсутствует" }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    📅 {{ task.updated_at|date:"d.m.Y" }}
+                                </small>
+                                <span class="badge bg-success">Выполнено</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if completed_tasks.count > 6 %}
+            <div class="text-center mt-3">
+                <a href="{% url 'tasks:my_tasks' %}?status=done" class="btn btn-outline-success">
+                    Показать все выполненные ({{ completed_tasks.count }})
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.table-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+.card-header .badge {
+    font-size: 0.8em;
+}
+</style>
+{% endblock %}

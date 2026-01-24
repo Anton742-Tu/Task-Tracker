@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.projects",
     "apps.tasks",
     "apps.files",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -56,7 +57,10 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [
+            BASE_DIR / "templates",
+            BASE_DIR / "templates/admin",  # Кастомные шаблоны админки
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -276,9 +280,18 @@ CACHES = {
     }
 }
 
-# Session
+LOGIN_URL = "/employee/login/"
+LOGIN_REDIRECT_URL = "/dashboard/"  # Для сотрудников
+LOGOUT_REDIRECT_URL = "/"
+
+# Настройки сессии
+SESSION_SAVE_EVERY_REQUEST = True
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 SESSION_COOKIE_AGE = 1209600  # 2 недели
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Закрывать сессию при закрытии браузера
 
 # Security (базовые настройки)
 SECURE_BROWSER_XSS_FILTER = True
@@ -289,3 +302,13 @@ X_FRAME_OPTIONS = "DENY"
 os.makedirs(STATIC_ROOT, exist_ok=True)
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(BASE_DIR / "logs", exist_ok=True)
+
+# Настройки CSRF
+CSRF_COOKIE_SECURE = False  # True только для HTTPS в продакшене
+CSRF_COOKIE_HTTPONLY = False  # Должно быть False для работы AJAX
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]

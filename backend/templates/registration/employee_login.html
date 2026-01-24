@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Вход в Task Tracker</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            width: 400px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .login-header {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .login-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .login-body {
+            padding: 30px;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .form-control:focus {
+            border-color: #4361ee;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            outline: none;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-login:hover {
+            background: linear-gradient(135deg, #3a0ca3, #4361ee);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        .role-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .role-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #f5f5f5;
+            cursor: pointer;
+            text-align: center;
+        }
+        .role-btn:hover {
+            background: #e9e9e9;
+        }
+        .role-btn.active {
+            background: #4361ee;
+            color: white;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-error {
+            background: #fee;
+            border: 1px solid #f99;
+            color: #c00;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>📋 Task Tracker</h1>
+            <p>Система управления задачами</p>
+        </div>
+
+        <div class="login-body">
+            {% if form.errors %}
+            <div class="alert alert-error">
+                ❌ Неверное имя пользователя или пароль
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <input type="text" name="username"
+                           class="form-control"
+                           placeholder="Имя пользователя"
+                           required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <input type="password" name="password"
+                           class="form-control"
+                           placeholder="Пароль"
+                           required>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    🔐 Войти в систему
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p>Вы входите как <strong>сотрудник</strong></p>
+                <p>Для администраторов: <a href="/admin/login/">войти в админку</a></p>
+                <p style="margin-top: 20px; font-size: 12px; color: #999;">
+                    © {% now "Y" %} Task Tracker
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

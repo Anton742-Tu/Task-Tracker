@@ -1,40 +1,72 @@
 import logging
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.conf import settings
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
 from .models import Task
+from .telegram_utils import send_telegram_message, get_user_chat_id
+from apps.users.models import User
 
 logger = logging.getLogger(__name__)
 
-# Telegram настройки (вынеси в settings или .env)
-TELEGRAM_BOT_TOKEN = (
-    settings.TELEGRAM_BOT_TOKEN if hasattr(settings, "TELEGRAM_BOT_TOKEN") else None
-)
-TELEGRAM_CHAT_IDS = getattr(settings, "TELEGRAM_CHAT_IDS", {})
+# Глобальный словарь для хранения предыдущих состояний задач
+_task_cache = {}
+
+
+@receiver(pre_save, sender=Task)
+def save_task_state(sender, instance, **kwargs):
+    """
+    Сохраняем состояние задачи перед сохранением
+    """
+    if instance.pk:
+        try:
+            old_instance = Task.objects.get(pk=instance.pk)
+            # Сохраняем ВСЕ важные поля
+            _task_cache[instance.pk] = {
+                "status": old_instance.status,
+                "assignee_id": (
+                    old_instance.assignee_id if old_instance.assignee else None
+                ),
+                "due_date": old_instance.due_date,
+                "priority": old_instance.priority,
+                "title": old_instance.title,
+                "description": old_instance.description,
+            }
+        except Task.DoesNotExist:
+            _task_cache[instance.pk] = None
+    else:
+        _task_cache.get(instance.pk, None)
 
 
 @receiver(post_save, sender=Task)
 def task_notification_system(sender, instance, created, **kwargs):
     """
-    Полная система уведомлений для задач:
-    1. Email при создании/изменении
-    2. Email при изменении статуса
-    3. Telegram уведомления
+    Полная система уведомлений для задач
     """
-    print(f"\n🔔 [NOTIFICATION] Задача: '{instance.title}' (ID: {instance.id})")
+    logger.info(
+        f"🔔 [NOTIFICATION] Обработка задачи: '{instance.title}' (ID: {instance.id})"
+    )
 
-    # Получаем изменения
-    if hasattr(instance, "_previous_status"):
-        status_changed = instance._previous_status != instance.status
-        old_status = instance._previous_status
-    else:
-        status_changed = False
-        old_status = None
+    old_data = _task_cache.get(instance.pk) if not created else None
 
-    # Получаем название проекта
+    # Определяем, какие поля изменились
+    changed_fields = []
+    if old_data:
+        if old_data.get("status") != instance.status:
+            changed_fields.append("status")
+        if old_data.get("assignee_id") != (
+            instance.assignee_id if instance.assignee else None
+        ):
+            changed_fields.append("assignee")
+        if old_data.get("due_date") != instance.due_date:
+            changed_fields.append("due_date")
+        if old_data.get("priority") != instance.priority:
+            changed_fields.append("priority")
+        if old_data.get("title") != instance.title:
+            changed_fields.append("title")
+        if old_data.get("description") != instance.description:
+            changed_fields.append("description")
+
     project_name = instance.project.name if instance.project else "Без проекта"
 
     # ====================
@@ -51,146 +83,219 @@ def task_notification_system(sender, instance, created, **kwargs):
         )
 
     # B. Email исполнителю при изменении статуса
-    elif status_changed and instance.assignee and instance.assignee.email:
+    elif "status" in changed_fields and instance.assignee and instance.assignee.email:
         send_task_email(
             instance,
             recipient=instance.assignee,
             email_type="status_changed",
             project_name=project_name,
-            old_status=old_status,
+            old_status=old_data.get("status") if old_data else None,
         )
 
-    # C. Email создателю при завершении задачи
-    elif (
-        status_changed
-        and instance.status == "completed"
-        and instance.creator
-        and instance.creator.email
-        and instance.creator != instance.assignee
-    ):  # Не отправляем если это один человек
+    # C. Email исполнителю при изменении сроков
+    elif "due_date" in changed_fields and instance.assignee and instance.assignee.email:
         send_task_email(
             instance,
-            recipient=instance.creator,
-            email_type="task_completed",
+            recipient=instance.assignee,
+            email_type="due_date_changed",
             project_name=project_name,
-            old_status=old_status,
+            old_due_date=old_data.get("due_date") if old_data else None,
         )
 
     # ==========================
     # 2. TELEGRAM УВЕДОМЛЕНИЯ
     # ==========================
 
-    if TELEGRAM_BOT_TOKEN:
-        # A. Telegram создателю при создании задачи
-        if (
-            created
-            and instance.creator
-            and instance.creator.username in TELEGRAM_CHAT_IDS
-        ):
-            send_telegram_notification(
-                chat_id=TELEGRAM_CHAT_IDS[instance.creator.username],
-                task=instance,
-                notification_type="new_task_creator",
-                project_name=project_name,
+    # Уведомление исполнителю
+    if instance.assignee:
+        chat_id = get_user_chat_id(instance.assignee)
+
+        if chat_id:
+            # A. При создании задачи
+            if created:
+                message = f"""🚀 <b>Вам назначена новая задача!</b>
+
+📌 <b>Задача:</b> {instance.title}
+📁 <b>Проект:</b> {project_name}
+📅 <b>Срок:</b> {instance.due_date.strftime('%d.%m.%Y') if instance.due_date else 'Не указан'}
+🏷️ <b>Приоритет:</b> {instance.get_priority_display()}
+📊 <b>Статус:</b> {instance.get_status_display()}"""
+
+                send_telegram_message(chat_id, message)
+                logger.info(
+                    f"✅ [TELEGRAM] Уведомление о новой задаче отправлено: {instance.assignee.username}"
+                )
+
+            # B. При изменении статуса
+            elif "status" in changed_fields:
+                old_status_display = (
+                    old_data.get("status", "неизвестно").replace("_", " ").title()
+                )
+                new_status_display = instance.status.replace("_", " ").title()
+
+                message = f"""📊 <b>Изменен статус задачи</b>
+
+📌 <b>Задача:</b> {instance.title}
+🔄 <b>Статус:</b> {old_status_display} → {new_status_display}
+👤 <b>Изменил:</b> {instance.creator.username if instance.creator else 'Система'}"""
+
+                send_telegram_message(chat_id, message)
+                logger.info(
+                    f"✅ [TELEGRAM] Уведомление о смене статуса отправлено: {instance.assignee.username}"
+                )
+
+            # C. При изменении сроков
+            elif "due_date" in changed_fields:
+                old_date = old_data.get("due_date")
+                new_date = instance.due_date
+
+                if old_date and new_date:
+                    message = f"""📅 <b>Изменен срок выполнения</b>
+
+📌 <b>Задача:</b> {instance.title}
+🔄 <b>Срок:</b> {old_date.strftime('%d.%m.%Y')} → {new_date.strftime('%d.%m.%Y')}"""
+
+                    send_telegram_message(chat_id, message)
+                    logger.info(
+                        f"✅ [TELEGRAM] Уведомление об изменении срока отправлено: {instance.assignee.username}"
+                    )
+
+    # Уведомление админу при ВСЕХ изменениях (если не админ менял)
+    admin_chat_id = getattr(settings, "TELEGRAM_CHAT_IDS", {}).get("admin")
+
+    if admin_chat_id and changed_fields and not created:
+        # Формируем список изменений
+        changes_list = []
+        if "status" in changed_fields:
+            changes_list.append(
+                f"статус: {old_data.get('status', 'неизвестно')} → {instance.status}"
+            )
+        if "assignee" in changed_fields:
+            old_assignee = (
+                User.objects.filter(id=old_data.get("assignee_id")).first()
+                if old_data.get("assignee_id")
+                else None
+            )
+            changes_list.append(
+                f"исполнитель: {old_assignee.username if old_assignee else 'нет'} → {instance.assignee.username if instance.assignee else 'нет'}"
+            )
+        if "due_date" in changed_fields:
+            old_date = old_data.get("due_date")
+            new_date = instance.due_date
+            changes_list.append(
+                f"срок: {old_date.strftime('%d.%m.%Y') if old_date else 'нет'} → {new_date.strftime('%d.%m.%Y') if new_date else 'нет'}"
             )
 
-        # B. Telegram исполнителю при создании/изменении
-        if instance.assignee and instance.assignee.username in TELEGRAM_CHAT_IDS:
-            if created:
-                send_telegram_notification(
-                    chat_id=TELEGRAM_CHAT_IDS[instance.assignee.username],
-                    task=instance,
-                    notification_type="new_task_assignee",
-                    project_name=project_name,
-                )
-            elif status_changed:
-                send_telegram_notification(
-                    chat_id=TELEGRAM_CHAT_IDS[instance.assignee.username],
-                    task=instance,
-                    notification_type="status_changed",
-                    project_name=project_name,
-                    old_status=old_status,
-                )
+        if changes_list:
+            changes_text = "\n".join([f"• {change}" for change in changes_list])
+
+            message = f"""👁‍🗨 <b>Админ: Задача изменена</b>
+
+📌 <b>Задача:</b> {instance.title} (ID: {instance.id})
+👤 <b>Изменил:</b> {instance.creator.username if instance.creator else 'Неизвестно'}
+
+<b>Изменения:</b>
+{changes_text}"""
+
+            send_telegram_message(admin_chat_id, message)
+            logger.info(
+                "✅ [TELEGRAM] Уведомление об изменениях отправлено администратору"
+            )
+
+    # Очищаем кэш
+    if instance.pk in _task_cache:
+        del _task_cache[instance.pk]
 
 
-def send_task_email(task, recipient, email_type, project_name, old_status=None):
+def send_task_email(
+    task, recipient, email_type, project_name, old_status=None, old_due_date=None
+):
     """
     Отправка email уведомления
     """
     try:
-        # Имя получателя
         recipient_name = (
             recipient.get_full_name() or recipient.first_name or recipient.username
         )
 
-        # Подготавливаем данные для шаблона
-        context = {
-            "task": task,
-            "recipient": recipient,
-            "recipient_name": recipient_name,
-            "project_name": project_name,
-            "old_status": old_status,
-            "site_url": getattr(settings, "SITE_URL", "http://localhost:8000"),
-        }
+        if not recipient.email:
+            logger.warning(f"⚠️ [EMAIL] У пользователя {recipient.username} нет email")
+            return
 
-        # Выбираем тему и шаблон
         if email_type == "new_task":
             subject = f"🚀 Новая задача: {task.title}"
-            template = "emails/task_created.html"
+
+            message = f"""Здравствуйте, {recipient_name}!
+
+Вам назначена новая задача:
+
+📌 Задача: {task.title}
+📁 Проект: {project_name}
+🏷️ Приоритет: {task.get_priority_display()}
+📅 Срок: {task.due_date.strftime('%d.%m.%Y') if task.due_date else 'Не указан'}
+📊 Статус: {task.get_status_display()}
+
+Описание:
+{task.description if task.description else 'Описание отсутствует'}
+
+Ссылка на задачу: {getattr(settings, 'SITE_URL', 'http://localhost:8000')}/tasks/{task.id}/
+"""
+
         elif email_type == "status_changed":
             subject = f"📝 Изменен статус задачи: {task.title}"
-            template = "emails/task_status_changed.html"
-            context["status_change"] = f"{old_status} → {task.status}"
-        elif email_type == "task_completed":
-            subject = f"✅ Задача выполнена: {task.title}"
-            template = "emails/task_completed.html"
+
+            message = f"""Здравствуйте, {recipient_name}!
+
+Изменен статус задачи:
+
+📌 Задача: {task.title}
+🔄 Статус: {old_status} → {task.status}
+📁 Проект: {project_name}
+
+Ссылка на задачу: {getattr(settings, 'SITE_URL', 'http://localhost:8000')}/tasks/{task.id}/
+"""
+
+        elif email_type == "due_date_changed":
+            subject = f"📅 Изменен срок задачи: {task.title}"
+
+            old_date_str = (
+                old_due_date.strftime("%d.%m.%Y") if old_due_date else "Не указан"
+            )
+            new_date_str = (
+                task.due_date.strftime("%d.%m.%Y") if task.due_date else "Не указан"
+            )
+
+            message = f"""Здравствуйте, {recipient_name}!
+
+Изменен срок выполнения задачи:
+
+📌 Задача: {task.title}
+🔄 Срок: {old_date_str} → {new_date_str}
+📁 Проект: {project_name}
+📊 Статус: {task.get_status_display()}
+
+Ссылка на задачу: {getattr(settings, 'SITE_URL', 'http://localhost:8000')}/tasks/{task.id}/
+"""
+
         else:
             return
 
-        # Рендерим HTML и plain text версии
-        html_message = render_to_string(template, context)
-        plain_message = strip_tags(html_message)
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@tasktracker.ru")
 
-        # Отправляем
         send_mail(
             subject=subject,
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL or "noreply@tasktracker.ru",
+            message=message,
+            from_email=from_email,
             recipient_list=[recipient.email],
-            html_message=html_message,
             fail_silently=False,
         )
 
-        print(f"✅ [EMAIL] Отправлен {email_type} на: {recipient.email}")
+        logger.info(f"✅ [EMAIL] Отправлен {email_type} на: {recipient.email}")
 
     except Exception as e:
-        print(f"❌ [EMAIL] Ошибка отправки: {e}")
-
-
-def send_telegram_message(chat_id, message):
-    """
-    Универсальная функция отправки сообщений в Telegram
-    Возвращает True при успехе, False при ошибке
-    """
-    if not TELEGRAM_BOT_TOKEN:
-        print("⚠️ [TELEGRAM] Токен бота не настроен")
-        return False
-
-    try:
-        import requests
-
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        payload = {"chat_id": chat_id, "text": message, "parse_mode": "HTML"}
-
-        response = requests.post(url, json=payload, timeout=10)
-        response.raise_for_status()
-
-        print(f"✅ [TELEGRAM] Сообщение отправлено в чат {chat_id}")
-        return True
-
-    except Exception as e:
-        print(f"❌ [TELEGRAM] Ошибка отправки: {e}")
-        return False
+        logger.error(
+            f"❌ [EMAIL] Ошибка отправки пользователю {recipient.username}: {e}"
+        )
 
 
 # Обновим старую функцию, чтобы она использовала новую
