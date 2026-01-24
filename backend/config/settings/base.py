@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.projects",
     "apps.tasks",
     "apps.files",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -56,7 +57,10 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [
+            BASE_DIR / "templates",
+            BASE_DIR / "templates/admin",  # Кастомные шаблоны админки
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

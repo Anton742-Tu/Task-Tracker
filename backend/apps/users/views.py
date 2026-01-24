@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import HttpResponseForbidden
 from django.contrib.auth import logout as auth_logout
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
 
 
 def employee_required(view_func):
@@ -30,8 +32,7 @@ def employee_dashboard(request):
 
     user = request.user
 
-    # Получаем задачи сотрудника (используем правильные статусы)
-    # Статусы обычно: 'todo', 'in_progress', 'review', 'done'
+    # Получаем задачи сотрудника
     tasks = Task.objects.filter(assignee=user).order_by("-created_at")
 
     # Правильные фильтры (адаптируйте под ваши статусы)
@@ -111,10 +112,47 @@ def employee_profile(request):
     return render(request, "users/employee_profile.html", {"user": request.user})
 
 
+@csrf_protect
+@require_POST  # Только POST запросы
 @login_required
 def custom_logout(request):
     """Кастомный выход из системы для надежности"""
+    # Очищаем все сессионные флаги перед выходом
+    session_keys_to_remove = ["show_site_for_admin", "force_site", "admin_override"]
+
+    for key in session_keys_to_remove:
+        if key in request.session:
+            del request.session[key]
+
+    # Получаем имя пользователя для логов
+    username = request.user.username
+
+    # Выполняем выход
     auth_logout(request)
-    # Очищаем сессию полностью
+
+    # Полностью очищаем сессию
     request.session.flush()
+
+    # Логируем выход
+    print(f"Пользователь {username} вышел из системы")
+
+    # Редирект на главную с параметром для сброса логики smart_home_redirect
+    return redirect("/?just_logged_out=true")
+
+
+# Альтернативная версия для GET запросов (если нужно)
+def logout_confirm(request):
+    """Страница подтверждения выхода"""
+    if not request.user.is_authenticated:
+        return redirect("/")
+
+    return render(request, "registration/logout_confirm.html")
+
+
+# Простой выход без подтверждения
+def simple_logout_view(request):
+    """Простой выход (для GET запросов)"""
+    if request.user.is_authenticated:
+        auth_logout(request)
+        request.session.flush()
     return redirect("/")

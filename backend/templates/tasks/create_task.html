@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Создать задачу{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">➕ Создать новую задачу</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Сообщения -->
+                    {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'tasks:create_task' %}">
+                        {% csrf_token %}
+
+                        <!-- Название задачи -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">
+                                <strong>Название задачи *</strong>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="title"
+                                   name="title"
+                                   required
+                                   placeholder="Введите название задачи">
+                        </div>
+
+                        <!-- Описание -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">
+                                <strong>Описание</strong>
+                            </label>
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
+                                      rows="4"
+                                      placeholder="Опишите задачу подробнее..."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <!-- Проект -->
+                            <div class="col-md-6 mb-3">
+                                <label for="project" class="form-label">
+                                    <strong>Проект</strong>
+                                </label>
+                                <select class="form-select" id="project" name="project">
+                                    <option value="">Без проекта</option>
+                                    {% for project in projects %}
+                                        <option value="{{ project.id }}">
+                                            {{ project.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Исполнитель -->
+                            <div class="col-md-6 mb-3">
+                                <label for="assignee" class="form-label">
+                                    <strong>Исполнитель</strong>
+                                </label>
+                                <select class="form-select" id="assignee" name="assignee">
+                                    <option value="">Не назначено</option>
+                                    {% for user in users %}
+                                        <option value="{{ user.id }}">
+                                            {{ user.get_full_name|default:user.username }}
+                                            {% if user == request.user %} (Вы) {% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Приоритет -->
+                            <div class="col-md-6 mb-3">
+                                <label for="priority" class="form-label">
+                                    <strong>Приоритет</strong>
+                                </label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="low">🔵 Низкий</option>
+                                    <option value="medium" selected>🟡 Средний</option>
+                                    <option value="high">🟠 Высокий</option>
+                                    <option value="critical">🔴 Критический</option>
+                                </select>
+                            </div>
+
+                            <!-- Срок выполнения -->
+                            <div class="col-md-6 mb-3">
+                                <label for="due_date" class="form-label">
+                                    <strong>Срок выполнения</strong>
+                                </label>
+                                <input type="date"
+                                       class="form-control"
+                                       id="due_date"
+                                       name="due_date"
+                                       min="{{ today|date:'Y-m-d' }}">
+                            </div>
+                        </div>
+
+                        <!-- Кнопки -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'home' %}" class="btn btn-secondary">
+                                ← На главную
+                            </a>
+                            <div>
+                                <a href="/admin/tasks/task/add/" class="btn btn-outline-primary me-2" target="_blank">
+                                    📋 Создать в админке
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    ✅ Создать задачу
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Подсказки -->
+            <div class="alert alert-info mt-3">
+                <h5>💡 Как создать эффективную задачу:</h5>
+                <ul class="mb-0">
+                    <li><strong>Название</strong> - должно быть понятным и кратким</li>
+                    <li><strong>Описание</strong> - детализируйте, что нужно сделать</li>
+                    <li><strong>Исполнитель</strong> - если не назначить, задача будет доступна всем</li>
+                    <li><strong>Срок</strong> - укажите реалистичный дедлайн</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Скрипт для установки минимальной даты -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Устанавливаем сегодняшнюю дату как минимальную для срока
+    const today = new Date().toISOString().split('T')[0];
+    const dueDateInput = document.getElementById('due_date');
+    if (dueDateInput && !dueDateInput.value) {
+        dueDateInput.min = today;
+    }
+
+    // Фокус на поле названия
+    document.getElementById('title').focus();
+});
+</script>
+{% endblock %}
